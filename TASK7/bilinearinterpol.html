@@ -1,0 +1,1205 @@
+<!DOCTYPE html>
+
+<html lang="en" data-content_root="../">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" /><meta name="generator" content="Docutils 0.18.1: http://docutils.sourceforge.net/" />
+
+    <title>32. Notebook: Bilinear interpolation and image rotations &#8212; Introduction to Programming and Image Processing 2026</title>
+    <link rel="stylesheet" type="text/css" href="../_static/pygments.css?v=b76e3c8a" />
+    <link rel="stylesheet" type="text/css" href="../_static/agogo.css?v=47acb022" />
+    <link rel="stylesheet" type="text/css" href="../_static/plot_directive.css" />
+    <link rel="stylesheet" type="text/css" href="../_static/stuff.css" />
+    <link rel="stylesheet" type="text/css" href="../_static/jupyter-sphinx.css" />
+    <link rel="stylesheet" type="text/css" href="../_static/thebelab.css" />
+    <link rel="stylesheet" type="text/css" href="../_static/prognum.css?v=7803580b" />
+    <link rel="stylesheet" type="text/css" href="../_static/sg_gallery.css?v=d2d258e8" />
+    <link rel="stylesheet" type="text/css" href="../_static/nbsphinx-code-cells.css?v=2aa19091" />
+    <script src="../_static/documentation_options.js?v=fc6fd62b"></script>
+    <script src="../_static/doctools.js?v=888ff710"></script>
+    <script src="../_static/sphinx_highlight.js?v=dc90522c"></script>
+    <script src="../_static/thebelab-helper.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/require.js/2.3.4/require.min.js"></script>
+    <script src="https://unpkg.com/@jupyter-widgets/html-manager@^0.20.0/dist/embed-amd.js"></script>
+    <script crossorigin="anonymous" integrity="sha256-Ae2Vz/4ePdIu6ZyI/5ZGsYnb+m0JlOmKPjt6XZ9JJkA=" src="https://cdnjs.cloudflare.com/ajax/libs/require.js/2.3.4/require.min.js"></script>
+    <script>window.MathJax = {"tex": {"inlineMath": [["$", "$"], ["\\(", "\\)"]], "processEscapes": true}, "options": {"ignoreHtmlClass": "tex2jax_ignore|mathjax_ignore|document", "processHtmlClass": "tex2jax_process|mathjax_process|math|output_area"}}</script>
+    <script defer="defer" src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-mml-chtml.js"></script>
+    <link rel="index" title="Index" href="../genindex.html" />
+    <link rel="search" title="Search" href="../search.html" />
+    <link rel="next" title="33. Notebook: Fourier Transforms" href="fourierTransforms.html" />
+    <link rel="prev" title="31. Notebook: Linear Algebra" href="LinearAlgebra.html" /> 
+  </head><body>
+    <div class="header-wrapper" role="banner">
+      <div class="header">
+        <div class="headertitle"><a
+          href="../contents.html">Introduction to Programming and Image Processing 2026</a></div>
+        <!--<div class="rel" role="navigation" aria-label="related navigation">
+          <a href="LinearAlgebra.html" title="31. Notebook: Linear Algebra"
+             accesskey="P">previous</a> |
+          <a href="fourierTransforms.html" title="33. Notebook: Fourier Transforms"
+             accesskey="N">next</a> |
+          <a href="../py-modindex.html" title="Python Module Index"
+             >modules</a> |
+          <a href="../genindex.html" title="General Index"
+             accesskey="I">index</a>
+        </div>-->
+       </div>
+    </div>
+
+    <div class="content-wrapper">
+      <div class="content">
+        <div class="document">
+            
+      <div class="documentwrapper">
+        <div class="bodywrapper">
+          <div class="body" role="main">
+            
+  <style>
+    h3 {
+       margin-top:2em;
+       color: #8B0000;
+       font-weight: bold;
+    }
+</style><section id="Notebook:-Bilinear-interpolation-and-image-rotations">
+<h1><span class="section-number">32. </span>Notebook: Bilinear interpolation and image rotations<a class="headerlink" href="#Notebook:-Bilinear-interpolation-and-image-rotations" title="Link to this heading">¶</a></h1>
+<p><img alt="image1" src="../_images/logo300px1.png" /></p>
+<section id="Linear-interpolation">
+<h2><span class="section-number">32.1. </span>Linear interpolation<a class="headerlink" href="#Linear-interpolation" title="Link to this heading">¶</a></h2>
+<p>This notebook has been written with some Linear Algebra in mind. We start with a drawing (forget this code) which shows how we can program a linear interpolation. Later we describe how we can implement a bilinear interpolation.</p>
+<h1><p>Table of Contents</p>
+</h1><div class="toc"><ul class="toc-item"><li><p>1  Linear interpolation</p>
+<ul class="toc-item"><li><p>1.1  Vector representation of a line between two positions</p>
+</li><li><p>1.2  Linear interpolation on a regular grid</p>
+</li><li><p>1.3  What is the interpolated intensity at <span class="math notranslate nohighlight">\(Xip=1.3\)</span>?</p>
+</li><li><p>1.4  Safeguarding against non-existing indices</p>
+</li></ul></li><li><p>2  Bilinear interpolation</p>
+<ul class="toc-item"><li><p>2.1  Confusing coordinate systems</p>
+</li><li><p>2.2  Interpolation in two directions</p>
+</li><li><p>2.3  Summary in a plot</p>
+</li><li><p>2.4  The implementation of the algorithm in a function</p>
+</li><li><p>2.5  Verify the result with a SciPy routine</p>
+</li><li><p>2.6  An implementation using matrix multiplications</p>
+</li><li><p>2.7  Using function multi_dot</p>
+</li><li><p>2.8  A function using multi_dot for bilinear interpolation</p>
+</li></ul></li><li><p>3  Image interpolation</p>
+<ul class="toc-item"><li><p>3.1  Template program for regridding</p>
+</li><li><p>3.2  Rotating an image using bilinear interpolation</p>
+</li><li><p>3.3  Speeding up the rotation</p>
+</li><li><p>3.4  Speeding up with numpy.ndindex by avoiding an inner loop</p>
+</li><li><p>3.5  Avoiding cutoffs</p>
+<ul class="toc-item"><li><p>3.5.1  The bilinear interpolation function bilinearIP</p>
+</li><li><p>3.5.2  Read the input data</p>
+</li><li><p>3.5.3  Calculating a new box by rotating the limits of the input data</p>
+</li><li><p>3.5.4  Use the new limits to sample the output image</p>
+</li></ul></li></ul></li><li><p>4  Rotation routines from Python modules</p>
+<ul class="toc-item"><li><p>4.1  Rotate with the ndimage module from SciPy</p>
+</li><li><p>4.2  Rotation with module Pillow</p>
+</li><li><p>4.3  Rotate an image with OpenCV</p>
+</li></ul></li></ul></div><div class="nbinput docutils container">
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[1]:
+</pre></div>
+</div>
+<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="kn">from</span> <span class="nn">matplotlib.pyplot</span> <span class="kn">import</span> <span class="n">figure</span><span class="p">,</span> <span class="n">show</span><span class="p">,</span> <span class="n">xkcd</span><span class="p">,</span> <span class="n">rc</span>
+<span class="kn">from</span> <span class="nn">matplotlib.patches</span> <span class="kn">import</span> <span class="n">Arc</span>
+<span class="kn">import</span> <span class="nn">numpy</span> <span class="k">as</span> <span class="nn">np</span>
+
+<span class="n">rc</span><span class="p">(</span><span class="s1">&#39;font&#39;</span><span class="p">,</span> <span class="n">size</span><span class="o">=</span><span class="mi">8</span><span class="p">)</span>
+
+<span class="c1"># Based on &quot;Stove Ownership&quot; from XKCD by Randall Monroe</span>
+<span class="c1"># http://xkcd.com/418/</span>
+<span class="k">if</span> <span class="mi">1</span><span class="p">:</span>   <span class="c1">#with xkcd():</span>
+    <span class="c1"># This figure will be in XKCD-style</span>
+    <span class="n">fig</span> <span class="o">=</span> <span class="n">figure</span><span class="p">(</span><span class="n">figsize</span><span class="o">=</span><span class="p">(</span><span class="mi">5</span><span class="p">,</span><span class="mi">5</span><span class="p">))</span>
+    <span class="n">frame</span> <span class="o">=</span> <span class="n">fig</span><span class="o">.</span><span class="n">add_subplot</span><span class="p">(</span><span class="mi">1</span><span class="p">,</span><span class="mi">1</span><span class="p">,</span><span class="mi">1</span><span class="p">,</span> <span class="n">aspect</span><span class="o">=</span><span class="mi">1</span><span class="p">)</span>
+    <span class="n">frame</span><span class="o">.</span><span class="n">spines</span><span class="p">[</span><span class="s1">&#39;left&#39;</span><span class="p">]</span><span class="o">.</span><span class="n">set_position</span><span class="p">(</span><span class="s1">&#39;zero&#39;</span><span class="p">)</span>
+    <span class="n">frame</span><span class="o">.</span><span class="n">spines</span><span class="p">[</span><span class="s1">&#39;right&#39;</span><span class="p">]</span><span class="o">.</span><span class="n">set_color</span><span class="p">(</span><span class="s1">&#39;none&#39;</span><span class="p">)</span>
+    <span class="n">frame</span><span class="o">.</span><span class="n">spines</span><span class="p">[</span><span class="s1">&#39;bottom&#39;</span><span class="p">]</span><span class="o">.</span><span class="n">set_position</span><span class="p">(</span><span class="s1">&#39;zero&#39;</span><span class="p">)</span>
+    <span class="n">frame</span><span class="o">.</span><span class="n">spines</span><span class="p">[</span><span class="s1">&#39;top&#39;</span><span class="p">]</span><span class="o">.</span><span class="n">set_color</span><span class="p">(</span><span class="s1">&#39;none&#39;</span><span class="p">)</span>
+    <span class="n">frame</span><span class="o">.</span><span class="n">xaxis</span><span class="o">.</span><span class="n">set_ticks_position</span><span class="p">(</span><span class="s1">&#39;bottom&#39;</span><span class="p">)</span>
+    <span class="n">frame</span><span class="o">.</span><span class="n">yaxis</span><span class="o">.</span><span class="n">set_ticks_position</span><span class="p">(</span><span class="s1">&#39;left&#39;</span><span class="p">)</span>
+    <span class="n">fig</span><span class="o">.</span><span class="n">suptitle</span><span class="p">(</span><span class="s2">&quot;Linear interpolation&quot;</span><span class="p">,</span> <span class="n">fontsize</span><span class="o">=</span><span class="mi">20</span><span class="p">)</span>
+    <span class="n">xy1</span> <span class="o">=</span> <span class="p">(</span><span class="mi">1</span><span class="p">,</span><span class="mi">2</span><span class="p">);</span> <span class="n">xy2</span> <span class="o">=</span> <span class="p">(</span><span class="mi">5</span><span class="p">,</span><span class="mi">4</span><span class="p">)</span>
+    <span class="n">frame</span><span class="o">.</span><span class="n">plot</span><span class="p">((</span><span class="n">xy1</span><span class="p">[</span><span class="mi">0</span><span class="p">],</span><span class="n">xy2</span><span class="p">[</span><span class="mi">0</span><span class="p">]),</span> <span class="p">(</span><span class="n">xy1</span><span class="p">[</span><span class="mi">1</span><span class="p">],</span> <span class="n">xy2</span><span class="p">[</span><span class="mi">1</span><span class="p">]))</span>
+    <span class="n">frame</span><span class="o">.</span><span class="n">plot</span><span class="p">([</span><span class="n">xy1</span><span class="p">[</span><span class="mi">0</span><span class="p">]],</span> <span class="p">[</span><span class="n">xy1</span><span class="p">[</span><span class="mi">1</span><span class="p">]],</span> <span class="n">marker</span><span class="o">=</span><span class="s1">&#39;o&#39;</span><span class="p">,</span> <span class="n">color</span><span class="o">=</span><span class="s1">&#39;g&#39;</span><span class="p">)</span>
+    <span class="n">frame</span><span class="o">.</span><span class="n">plot</span><span class="p">([</span><span class="n">xy2</span><span class="p">[</span><span class="mi">0</span><span class="p">]],</span> <span class="p">[</span><span class="n">xy2</span><span class="p">[</span><span class="mi">1</span><span class="p">]],</span> <span class="n">marker</span><span class="o">=</span><span class="s1">&#39;o&#39;</span><span class="p">,</span> <span class="n">color</span><span class="o">=</span><span class="s1">&#39;g&#39;</span><span class="p">)</span>
+    <span class="n">frame</span><span class="o">.</span><span class="n">set_xlim</span><span class="p">(</span><span class="mi">0</span><span class="p">,</span> <span class="n">xy2</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span><span class="o">+</span><span class="mi">1</span><span class="p">)</span>
+    <span class="n">frame</span><span class="o">.</span><span class="n">set_ylim</span><span class="p">(</span><span class="mi">0</span><span class="p">,</span> <span class="n">xy2</span><span class="p">[</span><span class="mi">1</span><span class="p">]</span><span class="o">+</span><span class="mi">1</span><span class="p">)</span>
+    <span class="n">frame</span><span class="o">.</span><span class="n">text</span><span class="p">(</span><span class="n">xy1</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span><span class="o">+</span><span class="mi">1</span><span class="p">,</span> <span class="n">xy1</span><span class="p">[</span><span class="mi">1</span><span class="p">]</span><span class="o">-</span><span class="mf">1.2</span><span class="p">,</span> <span class="sa">r</span><span class="s2">&quot;$x = 1 + \lambda (5 - 1)$&quot;</span><span class="p">)</span>
+    <span class="n">frame</span><span class="o">.</span><span class="n">text</span><span class="p">(</span><span class="n">xy1</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span><span class="o">+</span><span class="mi">1</span><span class="p">,</span> <span class="n">xy1</span><span class="p">[</span><span class="mi">1</span><span class="p">]</span><span class="o">-</span><span class="mf">1.5</span><span class="p">,</span> <span class="sa">r</span><span class="s2">&quot;$y = 2 + \lambda (4 - 2)$&quot;</span><span class="p">)</span>
+    <span class="n">frame</span><span class="o">.</span><span class="n">text</span><span class="p">(</span><span class="n">xy1</span><span class="p">[</span><span class="mi">0</span><span class="p">],</span> <span class="n">xy1</span><span class="p">[</span><span class="mi">1</span><span class="p">]</span><span class="o">+</span><span class="mf">0.3</span><span class="p">,</span> <span class="sa">r</span><span class="s2">&quot;$\lambda = 0$&quot;</span><span class="p">,</span> <span class="n">ha</span><span class="o">=</span><span class="s1">&#39;center&#39;</span><span class="p">)</span>
+    <span class="n">frame</span><span class="o">.</span><span class="n">text</span><span class="p">(</span><span class="n">xy2</span><span class="p">[</span><span class="mi">0</span><span class="p">],</span> <span class="n">xy2</span><span class="p">[</span><span class="mi">1</span><span class="p">]</span><span class="o">+</span><span class="mf">0.3</span><span class="p">,</span> <span class="sa">r</span><span class="s2">&quot;$\lambda = 1$&quot;</span><span class="p">,</span> <span class="n">ha</span><span class="o">=</span><span class="s1">&#39;center&#39;</span><span class="p">)</span>
+    <span class="n">frame</span><span class="o">.</span><span class="n">text</span><span class="p">(</span><span class="n">xy1</span><span class="p">[</span><span class="mi">0</span><span class="p">],</span> <span class="n">xy1</span><span class="p">[</span><span class="mi">1</span><span class="p">]</span><span class="o">-</span><span class="mf">0.4</span><span class="p">,</span> <span class="sa">f</span><span class="s2">&quot;$(x,y)=(</span><span class="si">{</span><span class="n">xy1</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span><span class="si">}</span><span class="s2">,</span><span class="si">{</span><span class="n">xy1</span><span class="p">[</span><span class="mi">1</span><span class="p">]</span><span class="si">}</span><span class="s2">)$&quot;</span><span class="p">)</span>
+    <span class="n">frame</span><span class="o">.</span><span class="n">text</span><span class="p">(</span><span class="n">xy2</span><span class="p">[</span><span class="mi">0</span><span class="p">],</span> <span class="n">xy2</span><span class="p">[</span><span class="mi">1</span><span class="p">]</span><span class="o">-</span><span class="mf">0.4</span><span class="p">,</span> <span class="sa">f</span><span class="s2">&quot;$(x,y)=(</span><span class="si">{</span><span class="n">xy2</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span><span class="si">}</span><span class="s2">,</span><span class="si">{</span><span class="n">xy2</span><span class="p">[</span><span class="mi">1</span><span class="p">]</span><span class="si">}</span><span class="s2">)$&quot;</span><span class="p">)</span>
+    <span class="n">Lambda</span> <span class="o">=</span> <span class="mf">0.7</span>
+    <span class="n">x</span> <span class="o">=</span> <span class="n">xy1</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span> <span class="o">+</span> <span class="n">Lambda</span><span class="o">*</span><span class="p">(</span><span class="n">xy2</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span><span class="o">-</span><span class="n">xy1</span><span class="p">[</span><span class="mi">0</span><span class="p">])</span>
+    <span class="n">y</span> <span class="o">=</span> <span class="n">xy1</span><span class="p">[</span><span class="mi">1</span><span class="p">]</span> <span class="o">+</span> <span class="n">Lambda</span><span class="o">*</span><span class="p">(</span><span class="n">xy2</span><span class="p">[</span><span class="mi">1</span><span class="p">]</span><span class="o">-</span><span class="n">xy1</span><span class="p">[</span><span class="mi">1</span><span class="p">])</span>
+    <span class="n">frame</span><span class="o">.</span><span class="n">plot</span><span class="p">([</span><span class="n">x</span><span class="p">],</span> <span class="p">[</span><span class="n">y</span><span class="p">],</span> <span class="n">marker</span><span class="o">=</span><span class="s1">&#39;o&#39;</span><span class="p">,</span> <span class="n">color</span><span class="o">=</span><span class="s1">&#39;r&#39;</span><span class="p">)</span>
+    <span class="n">s</span> <span class="o">=</span> <span class="sa">f</span><span class="s2">&quot;$\lambda$=</span><span class="si">{</span><span class="n">Lambda</span><span class="si">}</span><span class="s2">$ </span><span class="se">\\</span><span class="s2">rightarrow $</span><span class="se">\n</span><span class="s2">x=</span><span class="si">{</span><span class="n">x</span><span class="si">}</span><span class="se">\n</span><span class="s2">y=</span><span class="si">{</span><span class="n">y</span><span class="si">}</span><span class="s2">&quot;</span>
+    <span class="n">frame</span><span class="o">.</span><span class="n">text</span><span class="p">(</span><span class="n">x</span><span class="p">,</span> <span class="n">y</span><span class="o">-</span><span class="mf">0.1</span><span class="p">,</span> <span class="n">s</span><span class="p">,</span> <span class="n">va</span><span class="o">=</span><span class="s1">&#39;top&#39;</span><span class="p">)</span>
+    <span class="n">frame</span><span class="o">.</span><span class="n">set_xlabel</span><span class="p">(</span><span class="s2">&quot;x&quot;</span><span class="p">)</span>
+    <span class="n">frame</span><span class="o">.</span><span class="n">set_ylabel</span><span class="p">(</span><span class="s2">&quot;y&quot;</span><span class="p">)</span>
+<span class="n">show</span><span class="p">()</span>
+</pre></div>
+</div>
+</div>
+<div class="nboutput nblast docutils container">
+<div class="prompt empty docutils container">
+</div>
+<div class="output_area docutils container">
+<img alt="../_images/Notebooks_bilinearinterpol_2_0.png" src="../_images/Notebooks_bilinearinterpol_2_0.png" />
+</div>
+</div>
+<section id="Vector-representation-of-a-line-between-two-positions">
+<h3><span class="section-number">32.1.1. </span>Vector representation of a line between two positions<a class="headerlink" href="#Vector-representation-of-a-line-between-two-positions" title="Link to this heading">¶</a></h3>
+<p>Assume you have two point with coordinates <span class="math notranslate nohighlight">\(A=(x_0,y_0)\)</span> and <span class="math notranslate nohighlight">\(B=(x_1, y_1)\)</span>. How can we calculate the value of <span class="math notranslate nohighlight">\(y\)</span> at a position <span class="math notranslate nohighlight">\(x\)</span>? There are many solutions for this but we prefer to do this with some Linear Algebra.</p>
+<p>Remember that if we take these positions as vectors <span class="math notranslate nohighlight">\(\vec{A}\)</span> and <span class="math notranslate nohighlight">\(\vec{B}\)</span> then</p>
+<div class="math notranslate nohighlight">
+\[\begin{split}\vec{A} = \begin{bmatrix}x_0\\y_0\end{bmatrix} \text{,   } \vec{B} = \begin{bmatrix}x_1\\y_1\end{bmatrix}\end{split}\]</div>
+<p>A vector representation of the line that connects <span class="math notranslate nohighlight">\((x_0,y_0)\)</span> and <span class="math notranslate nohighlight">\((x_1, y_1)\)</span> is then:</p>
+<div class="math notranslate nohighlight">
+\[\begin{split}\begin{bmatrix}x\\y\end{bmatrix} = \vec{A} + \lambda(\vec{B}-\vec{A}) =
+\begin{bmatrix}x_0\\y_0\end{bmatrix} + \lambda\begin{bmatrix}x_1-x_0\\y_1-y_0\end{bmatrix}\end{split}\]</div>
+<p>Note that at <span class="math notranslate nohighlight">\(\lambda=0\)</span>, <span class="math notranslate nohighlight">\(x=x_0\)</span> and <span class="math notranslate nohighlight">\(y=y_0\)</span> which is the start point of the line, while at <span class="math notranslate nohighlight">\(\lambda=1\)</span> we have <span class="math notranslate nohighlight">\(x=x_1\)</span> and <span class="math notranslate nohighlight">\(y=y_1\)</span> which is the end point of the line.</p>
+<div class="line-block">
+<div class="line">Now assume that the <span class="math notranslate nohighlight">\(y\)</span> values represent intensities, let’s say <span class="math notranslate nohighlight">\(y_0\)</span> = <span class="math notranslate nohighlight">\(I_0\)</span> and <span class="math notranslate nohighlight">\(y_1\)</span> = <span class="math notranslate nohighlight">\(I_1\)</span>.</div>
+<div class="line">Then at a certain value of <span class="math notranslate nohighlight">\(\lambda\)</span> you find that <span class="math notranslate nohighlight">\(x = x_0 + \lambda (x_1-x_0)\)</span> while the interpolated intensity <span class="math notranslate nohighlight">\(I=I_0+ \lambda (I_1-I_0)\)</span>.</div>
+<div class="line">Usually you have a value of <span class="math notranslate nohighlight">\(x\)</span> at which you want to find the interpolated intensity, so you have to calculate <span class="math notranslate nohighlight">\(\lambda\)</span> first.</div>
+</div>
+<div class="nbinput docutils container">
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[2]:
+</pre></div>
+</div>
+<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="c1"># What is Lambda at x = 3.8?</span>
+<span class="n">Xip</span> <span class="o">=</span> <span class="mf">3.8</span>
+<span class="n">xstart</span> <span class="o">=</span> <span class="n">xy1</span><span class="p">[</span><span class="mi">0</span><span class="p">];</span> <span class="n">xend</span> <span class="o">=</span> <span class="n">xy2</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span>
+<span class="n">Lambda</span> <span class="o">=</span> <span class="p">(</span><span class="n">Xip</span><span class="o">-</span><span class="n">xstart</span><span class="p">)</span><span class="o">/</span><span class="p">(</span><span class="n">xend</span><span class="o">-</span><span class="n">xstart</span><span class="p">)</span>
+<span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;At the interpolation position Xip=</span><span class="si">{</span><span class="n">Xip</span><span class="si">}</span><span class="s2"> the value for Lambda=</span><span class="si">{</span><span class="n">Lambda</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
+</pre></div>
+</div>
+</div>
+<div class="nboutput nblast docutils container">
+<div class="prompt empty docutils container">
+</div>
+<div class="output_area docutils container">
+<div class="highlight"><pre>
+At the interpolation position Xip=3.8 the value for Lambda=0.7
+</pre></div></div>
+</div>
+</section>
+<section id="Linear-interpolation-on-a-regular-grid">
+<h3><span class="section-number">32.1.2. </span>Linear interpolation on a regular grid<a class="headerlink" href="#Linear-interpolation-on-a-regular-grid" title="Link to this heading">¶</a></h3>
+<div class="line-block">
+<div class="line">In astronomy we often apply linear interpolation for <span class="math notranslate nohighlight">\(x\)</span> values on a regular grid.</div>
+<div class="line">Then we take the <span class="math notranslate nohighlight">\(x\)</span> values as integers which correspond to index numbers in an array with intensities.</div>
+<div class="line">For example:</div>
+</div>
+<p><code class="docutils literal notranslate"><span class="pre">I</span> <span class="pre">=</span> <span class="pre">np.array([1000,</span> <span class="pre">1100,</span> <span class="pre">1400])</span></code></p>
+<div class="line-block">
+<div class="line">Then the <span class="math notranslate nohighlight">\(x\)</span> values that correspond to <span class="math notranslate nohighlight">\(I\)</span> are 0, 1 and 2.</div>
+<div class="line">Usually we generate these <span class="math notranslate nohighlight">\(x\)</span> values on a grid with the following code:</div>
+</div>
+<div class="nbinput docutils container">
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[3]:
+</pre></div>
+</div>
+<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="n">I</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">([</span><span class="mi">1000</span><span class="p">,</span> <span class="mi">1100</span><span class="p">,</span> <span class="mi">1400</span><span class="p">])</span>
+<span class="n">xgrid</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">arange</span><span class="p">(</span><span class="n">I</span><span class="o">.</span><span class="n">size</span><span class="p">)</span>
+<span class="nb">print</span><span class="p">(</span><span class="n">xgrid</span><span class="p">)</span>
+</pre></div>
+</div>
+</div>
+<div class="nboutput nblast docutils container">
+<div class="prompt empty docutils container">
+</div>
+<div class="output_area docutils container">
+<div class="highlight"><pre>
+[0 1 2]
+</pre></div></div>
+</div>
+</section>
+<section id="What-is-the-interpolated-intensity-at-Xip=1.3?">
+<h3><span class="section-number">32.1.3. </span>What is the interpolated intensity at <span class="math notranslate nohighlight">\(Xip=1.3\)</span>?<a class="headerlink" href="#What-is-the-interpolated-intensity-at-Xip=1.3?" title="Link to this heading">¶</a></h3>
+<p>By using a regular grid we can for a given value of <span class="math notranslate nohighlight">\(x\)</span> always find the left and right intensity on the grid. If we set the position of the left intensity to 0 and that of the right intensity to 1, then this simplifies our formulas.</p>
+<p>We find those left and right intensities for our given <span class="math notranslate nohighlight">\(Xip=1.3\)</span> by observing that <span class="math notranslate nohighlight">\(Xip\)</span> is between 1 and 2. So we take:</p>
+<div class="math notranslate nohighlight">
+\[I_0=I[int(Xip)]  \quad \quad I_1=I[int(Xip)+1]\]</div>
+<p>.</p>
+<p>We dis set <span class="math notranslate nohighlight">\(x_0=0\)</span> and <span class="math notranslate nohighlight">\(x_1=1\)</span> for which then automatically follows that <span class="math notranslate nohighlight">\(\lambda=0.3\)</span>. One can find <span class="math notranslate nohighlight">\(\lambda\)</span> for a given <span class="math notranslate nohighlight">\(x\)</span> with:</p>
+<p><code class="docutils literal notranslate"><span class="pre">lambda</span> <span class="pre">=</span> <span class="pre">Xip</span> <span class="pre">-</span> <span class="pre">int(Xip)</span></code></p>
+<p>With this information we rewrite our interpolation formula. With <span class="math notranslate nohighlight">\(I_{ip}\)</span> as the required interpolated intensity, at position <span class="math notranslate nohighlight">\(X_{ip}\)</span> it becomes:</p>
+<div class="math notranslate nohighlight">
+\[\begin{split}\begin{bmatrix}X_{ip}\\I_{ip}\end{bmatrix}  =
+\begin{bmatrix}0\\I_0\end{bmatrix} + \lambda\begin{bmatrix}1\\I_1-I_0\end{bmatrix}\end{split}\]</div>
+<p>which confirms that for <span class="math notranslate nohighlight">\(\lambda=0\)</span> we identified the left position with intensity <span class="math notranslate nohighlight">\(I_0\)</span> and for <span class="math notranslate nohighlight">\(\lambda=1\)</span> we have the position at the right with intensity <span class="math notranslate nohighlight">\(I_1\)</span>.</p>
+<p>Let’s make a Python function for this:</p>
+<div class="nbinput docutils container">
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[4]:
+</pre></div>
+</div>
+<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="kn">import</span> <span class="nn">numpy</span> <span class="k">as</span> <span class="nn">np</span>
+
+<span class="k">def</span> <span class="nf">linearIP</span><span class="p">(</span><span class="n">I</span><span class="p">,</span> <span class="n">X</span><span class="p">):</span>
+<span class="w">    </span><span class="sd">&#39;&#39;&#39;A is a one dimensional array and x is the position at</span>
+<span class="sd">       which we want to interpolate. x must be bigger or equal to 0 and</span>
+<span class="sd">       smaller than the highest index of I&#39;&#39;&#39;</span>
+    <span class="n">indx</span> <span class="o">=</span> <span class="nb">int</span><span class="p">(</span><span class="n">X</span><span class="p">)</span>
+    <span class="n">Lambda</span> <span class="o">=</span> <span class="n">X</span> <span class="o">-</span> <span class="nb">int</span><span class="p">(</span><span class="n">X</span><span class="p">)</span>
+    <span class="n">I0</span> <span class="o">=</span> <span class="n">I</span><span class="p">[</span><span class="n">indx</span><span class="p">]</span>
+    <span class="n">I1</span> <span class="o">=</span> <span class="n">I</span><span class="p">[</span><span class="n">indx</span><span class="o">+</span><span class="mi">1</span><span class="p">]</span>
+    <span class="n">Iintp</span> <span class="o">=</span> <span class="n">I0</span> <span class="o">+</span> <span class="n">Lambda</span><span class="o">*</span><span class="p">(</span><span class="n">I1</span><span class="o">-</span><span class="n">I0</span><span class="p">)</span>
+    <span class="k">return</span><span class="p">(</span><span class="n">Iintp</span><span class="p">)</span>
+
+
+<span class="n">I</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">([</span><span class="mi">1000</span><span class="p">,</span> <span class="mi">1100</span><span class="p">,</span> <span class="mi">1400</span><span class="p">])</span>
+<span class="n">x</span> <span class="o">=</span> <span class="mf">1.3</span>
+<span class="n">Iip</span> <span class="o">=</span> <span class="n">linearIP</span><span class="p">(</span><span class="n">I</span><span class="p">,</span> <span class="n">x</span><span class="p">)</span>
+<span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;The interpolated intensity at x=</span><span class="si">{</span><span class="n">x</span><span class="si">}</span><span class="s2"> is </span><span class="si">{</span><span class="n">Iip</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
+</pre></div>
+</div>
+</div>
+<div class="nboutput nblast docutils container">
+<div class="prompt empty docutils container">
+</div>
+<div class="output_area docutils container">
+<div class="highlight"><pre>
+The interpolated intensity at x=1.3 is 1190.0
+</pre></div></div>
+</div>
+<p>In the next cell we use IPython widgets for an interactive program to check our algorithm. It uses a slider. The value of the slider is our position <span class="math notranslate nohighlight">\(x\)</span>. The program shows the interpolated intensity.</p>
+<div class="nbinput docutils container">
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[5]:
+</pre></div>
+</div>
+<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="kn">from</span> <span class="nn">ipywidgets</span> <span class="kn">import</span> <span class="n">interact</span>
+
+<span class="nd">@interact</span><span class="p">(</span><span class="n">Xip</span><span class="o">=</span><span class="p">(</span><span class="mf">0.0</span><span class="p">,</span> <span class="mi">2</span><span class="o">-</span><span class="mf">0.0001</span><span class="p">,</span> <span class="mf">0.05</span><span class="p">))</span>
+<span class="k">def</span> <span class="nf">p</span><span class="p">(</span><span class="n">Xip</span><span class="o">=</span><span class="mi">1</span><span class="p">):</span>
+    <span class="n">Iip</span> <span class="o">=</span> <span class="n">linearIP</span><span class="p">(</span><span class="n">I</span><span class="p">,</span> <span class="n">Xip</span><span class="p">)</span>
+    <span class="nb">print</span><span class="p">(</span><span class="s2">&quot;Xip=&quot;</span><span class="p">,</span><span class="n">Xip</span><span class="p">,</span> <span class="s2">&quot;</span><span class="se">\n</span><span class="s2">Iip=&quot;</span><span class="p">,</span><span class="n">Iip</span><span class="p">)</span>
+    <span class="k">pass</span>
+</pre></div>
+</div>
+</div>
+<div class="nboutput nblast docutils container">
+<div class="prompt empty docutils container">
+</div>
+<div class="output_area docutils container">
+<script type="application/vnd.jupyter.widget-view+json">{"model_id": "9d5fbc54e02d4125bbb9727747d27f18", "version_major": 2, "version_minor": 0}</script></div>
+</div>
+<p>Note that the slider cannot reach value 2. That is because at <span class="math notranslate nohighlight">\(x=2\)</span> the index value for the neighbour is 3 and there is no element with index 3. So we should decide what to do then to protect our program from crashing.</p>
+<p>If the position of <span class="math notranslate nohighlight">\(x\)</span> corresponds to an index at the end of the array, we should return the value of the last intensity. Also, the value of <span class="math notranslate nohighlight">\(x\)</span> should not be negative. In that case we return the first intensity in the array. This can be implemented as follows:</p>
+</section>
+<section id="Safeguarding-against-non-existing-indices">
+<h3><span class="section-number">32.1.4. </span>Safeguarding against non-existing indices<a class="headerlink" href="#Safeguarding-against-non-existing-indices" title="Link to this heading">¶</a></h3>
+<div class="nbinput docutils container">
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[6]:
+</pre></div>
+</div>
+<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="k">def</span> <span class="nf">linearIP</span><span class="p">(</span><span class="n">I</span><span class="p">,</span> <span class="n">X</span><span class="p">):</span>
+<span class="w">    </span><span class="sd">&#39;&#39;&#39;A is a one dimensional array and x is the position at</span>
+<span class="sd">       which we want to interpolate. x must be bigger or equal to 0 and</span>
+<span class="sd">       smaller than the highest index of I&#39;&#39;&#39;</span>
+    <span class="n">indx</span> <span class="o">=</span> <span class="nb">int</span><span class="p">(</span><span class="n">X</span><span class="p">)</span>
+    <span class="k">if</span> <span class="n">indx</span> <span class="o">&lt;</span> <span class="mi">0</span><span class="p">:</span>
+        <span class="k">return</span> <span class="n">I</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span>
+    <span class="k">if</span> <span class="n">indx</span><span class="o">+</span><span class="mi">1</span> <span class="o">&gt;=</span> <span class="n">I</span><span class="o">.</span><span class="n">size</span><span class="p">:</span>
+        <span class="k">return</span> <span class="n">I</span><span class="p">[</span><span class="o">-</span><span class="mi">1</span><span class="p">]</span>
+
+    <span class="n">Lambda</span> <span class="o">=</span> <span class="n">X</span> <span class="o">-</span> <span class="nb">int</span><span class="p">(</span><span class="n">X</span><span class="p">)</span>
+    <span class="n">I0</span> <span class="o">=</span> <span class="n">I</span><span class="p">[</span><span class="n">indx</span><span class="p">]</span>
+    <span class="k">if</span> <span class="n">indx</span><span class="o">+</span><span class="mi">1</span> <span class="o">&lt;</span> <span class="n">I</span><span class="o">.</span><span class="n">size</span><span class="p">:</span>
+        <span class="n">I1</span> <span class="o">=</span> <span class="n">I</span><span class="p">[</span><span class="n">indx</span><span class="o">+</span><span class="mi">1</span><span class="p">]</span>
+    <span class="k">else</span><span class="p">:</span>
+        <span class="n">I1</span> <span class="o">=</span> <span class="n">I</span><span class="p">[</span><span class="n">indx</span><span class="p">]</span>
+    <span class="n">Iintp</span> <span class="o">=</span> <span class="n">I0</span> <span class="o">+</span> <span class="n">Lambda</span><span class="o">*</span><span class="p">(</span><span class="n">I1</span><span class="o">-</span><span class="n">I0</span><span class="p">)</span>
+    <span class="k">return</span><span class="p">(</span><span class="n">Iintp</span><span class="p">)</span>
+
+<span class="nd">@interact</span><span class="p">(</span><span class="n">x</span><span class="o">=</span><span class="p">(</span><span class="mf">0.0</span><span class="p">,</span> <span class="mi">2</span><span class="p">,</span> <span class="mf">0.05</span><span class="p">))</span>
+<span class="k">def</span> <span class="nf">p</span><span class="p">(</span><span class="n">x</span><span class="o">=</span><span class="mi">1</span><span class="p">):</span>
+    <span class="n">Iip</span> <span class="o">=</span> <span class="n">linearIP</span><span class="p">(</span><span class="n">I</span><span class="p">,</span> <span class="n">x</span><span class="p">)</span>
+    <span class="nb">print</span><span class="p">(</span><span class="s2">&quot;x=&quot;</span><span class="p">,</span><span class="n">x</span><span class="p">,</span> <span class="s2">&quot;</span><span class="se">\n</span><span class="s2">I=&quot;</span><span class="p">,</span><span class="n">Iip</span><span class="p">)</span>
+    <span class="k">pass</span>
+</pre></div>
+</div>
+</div>
+<div class="nboutput nblast docutils container">
+<div class="prompt empty docutils container">
+</div>
+<div class="output_area docutils container">
+<script type="application/vnd.jupyter.widget-view+json">{"model_id": "c97727695c524220a2d7c1f3e3914cbc", "version_major": 2, "version_minor": 0}</script></div>
+</div>
+</section>
+</section>
+<section id="Bilinear-interpolation">
+<h2><span class="section-number">32.2. </span>Bilinear interpolation<a class="headerlink" href="#Bilinear-interpolation" title="Link to this heading">¶</a></h2>
+<section id="Confusing-coordinate-systems">
+<h3><span class="section-number">32.2.1. </span>Confusing coordinate systems<a class="headerlink" href="#Confusing-coordinate-systems" title="Link to this heading">¶</a></h3>
+<div class="line-block">
+<div class="line">Historically, TV’s draw their lines from left to right and from top to bottom.</div>
+<div class="line">Cartesian coordinate systems have <span class="math notranslate nohighlight">\(y\)</span> increasing from bottom to top. Most image formats (PNG, JPG etc.) plot their data from top to bottom. This is comparable how a two-dimensional NumPy array is printed.</div>
+<div class="line">But in astronomy we use the FITS format a lot and there the data should be displayed with <span class="math notranslate nohighlight">\(y\)</span> increasing towards the top. That is the reason we need to set <code class="docutils literal notranslate"><span class="pre">origin='lower'</span></code> in Matplotlib’s <code class="docutils literal notranslate"><span class="pre">imshow()</span></code> function.</div>
+</div>
+<p>We can get a consistent view on the matter when we take a coordinate system with the origin of <span class="math notranslate nohighlight">\(y\)</span> at the top to reflect the indices of a matrix <span class="math notranslate nohighlight">\(A_{ij}\)</span> where we agreed that <span class="math notranslate nohighlight">\(i\)</span> represents the row (<span class="math notranslate nohighlight">\(i\)</span> increases from top the bottom), and <span class="math notranslate nohighlight">\(j\)</span> represents the column (<span class="math notranslate nohighlight">\(j\)</span> increases from left to right).</p>
+<p>Here we see a lucky resemblance between indices of a two dimensional NumPy array and a matrix from Linear Algebra. In the latter we start with indices <span class="math notranslate nohighlight">\(i=1\)</span> and <span class="math notranslate nohighlight">\(j=1\)</span> while the first element in a two dimensional NumPy array <span class="math notranslate nohighlight">\(M[0,0]\)</span>.</p>
+<p>So for images, one should have a matrix from Linear Algebra in mind. If one needs to work in a Cartesian coordinate system, you have to do some conversions from Cartesian coordinates to NumPy array indices.</p>
+<p>Note that for images we assume a rectangular grid system for which the image values are defined.</p>
+</section>
+<section id="Interpolation-in-two-directions">
+<h3><span class="section-number">32.2.2. </span>Interpolation in two directions<a class="headerlink" href="#Interpolation-in-two-directions" title="Link to this heading">¶</a></h3>
+<p>A simple approach to bilinear interpolation is that one can interpolate first in the direction of <span class="math notranslate nohighlight">\(j\)</span> (columns) to get two interpolated intensities. These are linearly interpolated in the direction of <span class="math notranslate nohighlight">\(i\)</span> (rows).</p>
+<p>Assume we have 4 pixels from a two dimensional structure (e.a. a 2-dim NumPy array that represents an image). If we follow the standard indexing from Linear Algebra then we can represent the intensities as:</p>
+<div class="math notranslate nohighlight">
+\[\begin{split}M = \begin{bmatrix}I_{i,\ j} &amp; I_{i,\ j+1}\\I_{i+1,\ j} &amp; I_{i+1,\ j+1}\end{bmatrix}\end{split}\]</div>
+<p>For simplicity, let’s write:</p>
+<div class="math notranslate nohighlight">
+\[\begin{split}M = \begin{bmatrix}I_{0} &amp; I_{1}\\I_{2} &amp; I_{3}\end{bmatrix}\end{split}\]</div>
+<p>At certain position <span class="math notranslate nohighlight">\(j_f\)</span> between two columns given by <span class="math notranslate nohighlight">\({\lambda}\)</span> (remember: <span class="math notranslate nohighlight">\({\lambda}=0\)</span> at <span class="math notranslate nohighlight">\(I_0\)</span> and <span class="math notranslate nohighlight">\({\lambda}=1\)</span> at <span class="math notranslate nohighlight">\(I
+_1\)</span>) we have the interpolated intensity for <span class="math notranslate nohighlight">\(I_0\)</span> and <span class="math notranslate nohighlight">\(I_1\)</span> which is:</p>
+<div class="math notranslate nohighlight">
+\[I_{y0} = I_0 + \lambda(I_1-I_0)\]</div>
+<p>For the same value of <span class="math notranslate nohighlight">\(\lambda\)</span> we also find an interpolated value for <span class="math notranslate nohighlight">\(I_2\)</span> and <span class="math notranslate nohighlight">\(I_3\)</span>:</p>
+<div class="math notranslate nohighlight">
+\[I_{y1} = I_2 + \lambda(I_3-I_2)\]</div>
+<p>At certain position <span class="math notranslate nohighlight">\(i_f\)</span> between two rows given by <span class="math notranslate nohighlight">\(\mu\)</span> (remember: <span class="math notranslate nohighlight">\(\mu=0\)</span> for the top row and <span class="math notranslate nohighlight">\(\mu=1\)</span> for the bottom row) we can now interpolate in the <span class="math notranslate nohighlight">\(y\)</span> direction to obtain:</p>
+<div class="math notranslate nohighlight">
+\[I_{ip} = I_{y0} + \mu(I_{y1}-I_{y0})\]</div>
+<p>If we insert <span class="math notranslate nohighlight">\(I_{y0}\)</span> and <span class="math notranslate nohighlight">\(I_{y0}\)</span> in this last equation we get:</p>
+<div class="math notranslate nohighlight">
+\[I_{ip}=(1-\lambda)I_0+\lambda I_1+\mu\Big[1-\lambda)I_2+\lambda I_3-\big( (1-\lambda)I_0+\lambda I_1\big)  \Big]\]</div>
+<p>which simplifies into:</p>
+<div class="math notranslate nohighlight">
+\[\boxed{I_{ip}= (1-\lambda)(1-\mu)I_0 + \lambda(1-\mu)I_1 + \mu (1-\lambda)I_2+\lambda \mu I_3}\]</div>
+<div class="line-block">
+<div class="line">A position at which we want to interpolate can be given by (usually two floating point numbers) <span class="math notranslate nohighlight">\((i_f, j_f)\)</span>.</div>
+<div class="line">Then it is obvious that for the indices of the upper left intensity <span class="math notranslate nohighlight">\(I_0\)</span> we find:</div>
+</div>
+<div class="math notranslate nohighlight">
+\[i=int(\,i_f\,)\]</div>
+<div class="math notranslate nohighlight">
+\[j=int(\,j_f\,)\]</div>
+<p>Python function <code class="docutils literal notranslate"><span class="pre">int()</span></code> returns the integer part of a floating point number.</p>
+<p>For the offsets <span class="math notranslate nohighlight">\(\lambda\)</span> and <span class="math notranslate nohighlight">\(\mu\)</span> we find</p>
+<div class="math notranslate nohighlight">
+\[\lambda = j_f - j\]</div>
+<div class="math notranslate nohighlight">
+\[\mu = i_f - i\]</div>
+</section>
+<section id="Summary-in-a-plot">
+<h3><span class="section-number">32.2.3. </span>Summary in a plot<a class="headerlink" href="#Summary-in-a-plot" title="Link to this heading">¶</a></h3>
+<p>We created a plot to help you to understand what we wrote in the previous cell. Forget the code, just focus on the plot.</p>
+<div class="nbinput docutils container">
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[7]:
+</pre></div>
+</div>
+<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="kn">from</span> <span class="nn">matplotlib.pyplot</span> <span class="kn">import</span> <span class="n">figure</span><span class="p">,</span> <span class="n">show</span><span class="p">,</span> <span class="n">xkcd</span><span class="p">,</span> <span class="n">rc</span>
+<span class="kn">import</span> <span class="nn">numpy</span> <span class="k">as</span> <span class="nn">np</span>
+
+<span class="n">rc</span><span class="p">(</span><span class="s1">&#39;font&#39;</span><span class="p">,</span> <span class="n">size</span><span class="o">=</span><span class="mi">8</span><span class="p">)</span>
+<span class="k">if</span> <span class="mi">1</span><span class="p">:</span> <span class="c1">#with xkcd():</span>
+    <span class="c1"># This figure will be in XKCD-style</span>
+    <span class="n">fig</span> <span class="o">=</span> <span class="n">figure</span><span class="p">(</span><span class="n">figsize</span><span class="o">=</span><span class="p">(</span><span class="mi">6</span><span class="p">,</span><span class="mi">6</span><span class="p">))</span>
+    <span class="n">frame</span> <span class="o">=</span> <span class="n">fig</span><span class="o">.</span><span class="n">add_subplot</span><span class="p">(</span><span class="mi">1</span><span class="p">,</span><span class="mi">1</span><span class="p">,</span><span class="mi">1</span><span class="p">,</span> <span class="n">aspect</span><span class="o">=</span><span class="mi">1</span><span class="p">)</span>
+    <span class="c1">#frame.spines[&#39;left&#39;].set_position(&#39;zero&#39;)</span>
+    <span class="c1">#frame.spines[&#39;right&#39;].set_color(&#39;none&#39;)</span>
+    <span class="c1">#frame.spines[&#39;bottom&#39;].set_position(&#39;zero&#39;)</span>
+    <span class="c1">#frame.spines[&#39;top&#39;].set_color(&#39;none&#39;)</span>
+    <span class="c1">#frame.xaxis.set_ticks_position(&#39;bottom&#39;)</span>
+    <span class="c1">#frame.yaxis.set_ticks_position(&#39;left&#39;)</span>
+
+    <span class="n">I0</span> <span class="o">=</span> <span class="p">(</span><span class="mi">1</span><span class="p">,</span><span class="mi">1</span><span class="p">);</span> <span class="n">I1</span> <span class="o">=</span> <span class="p">(</span><span class="mi">2</span><span class="p">,</span><span class="mi">1</span><span class="p">)</span>
+    <span class="n">I2</span> <span class="o">=</span> <span class="p">(</span><span class="mi">1</span><span class="p">,</span><span class="mi">2</span><span class="p">);</span> <span class="n">I3</span> <span class="o">=</span> <span class="p">(</span><span class="mi">2</span><span class="p">,</span><span class="mi">2</span><span class="p">)</span>
+    <span class="n">I0val</span> <span class="o">=</span> <span class="mi">10</span><span class="p">;</span> <span class="n">I1val</span> <span class="o">=</span> <span class="mi">20</span><span class="p">;</span> <span class="n">I2val</span> <span class="o">=</span> <span class="mi">30</span><span class="p">;</span> <span class="n">I3val</span> <span class="o">=</span> <span class="mi">40</span>
+    <span class="n">frame</span><span class="o">.</span><span class="n">plot</span><span class="p">([</span><span class="n">I0</span><span class="p">[</span><span class="mi">0</span><span class="p">]],</span> <span class="p">[</span><span class="n">I0</span><span class="p">[</span><span class="mi">1</span><span class="p">]],</span> <span class="n">marker</span><span class="o">=</span><span class="s1">&#39;o&#39;</span><span class="p">,</span> <span class="n">color</span><span class="o">=</span><span class="s1">&#39;g&#39;</span><span class="p">,</span> <span class="n">ms</span><span class="o">=</span><span class="mi">10</span><span class="p">)</span>
+    <span class="n">frame</span><span class="o">.</span><span class="n">text</span><span class="p">(</span><span class="n">I0</span><span class="p">[</span><span class="mi">0</span><span class="p">],</span> <span class="n">I0</span><span class="p">[</span><span class="mi">1</span><span class="p">]</span><span class="o">-</span><span class="mf">0.2</span><span class="p">,</span> <span class="sa">f</span><span class="s2">&quot;I0=M[1,1]=</span><span class="si">{</span><span class="n">I0val</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">,</span> <span class="n">ha</span><span class="o">=</span><span class="s1">&#39;center&#39;</span><span class="p">)</span>
+    <span class="n">frame</span><span class="o">.</span><span class="n">plot</span><span class="p">([</span><span class="n">I1</span><span class="p">[</span><span class="mi">0</span><span class="p">]],</span> <span class="p">[</span><span class="n">I1</span><span class="p">[</span><span class="mi">1</span><span class="p">]],</span> <span class="n">marker</span><span class="o">=</span><span class="s1">&#39;o&#39;</span><span class="p">,</span> <span class="n">color</span><span class="o">=</span><span class="s1">&#39;g&#39;</span><span class="p">,</span> <span class="n">ms</span><span class="o">=</span><span class="mi">10</span><span class="p">)</span>
+    <span class="n">frame</span><span class="o">.</span><span class="n">text</span><span class="p">(</span><span class="n">I1</span><span class="p">[</span><span class="mi">0</span><span class="p">],</span> <span class="n">I1</span><span class="p">[</span><span class="mi">1</span><span class="p">]</span><span class="o">-</span><span class="mf">0.2</span><span class="p">,</span> <span class="sa">f</span><span class="s2">&quot;I1=M[1,2]=</span><span class="si">{</span><span class="n">I1val</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">,</span> <span class="n">ha</span><span class="o">=</span><span class="s1">&#39;center&#39;</span><span class="p">)</span>
+    <span class="n">frame</span><span class="o">.</span><span class="n">plot</span><span class="p">([</span><span class="n">I2</span><span class="p">[</span><span class="mi">0</span><span class="p">]],</span> <span class="p">[</span><span class="n">I2</span><span class="p">[</span><span class="mi">1</span><span class="p">]],</span> <span class="n">marker</span><span class="o">=</span><span class="s1">&#39;o&#39;</span><span class="p">,</span> <span class="n">color</span><span class="o">=</span><span class="s1">&#39;g&#39;</span><span class="p">,</span> <span class="n">ms</span><span class="o">=</span><span class="mi">10</span><span class="p">)</span>
+    <span class="n">frame</span><span class="o">.</span><span class="n">text</span><span class="p">(</span><span class="n">I2</span><span class="p">[</span><span class="mi">0</span><span class="p">],</span> <span class="n">I2</span><span class="p">[</span><span class="mi">1</span><span class="p">]</span><span class="o">+</span><span class="mf">0.2</span><span class="p">,</span> <span class="sa">f</span><span class="s2">&quot;I2=M[2,1]=</span><span class="si">{</span><span class="n">I2val</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">,</span> <span class="n">ha</span><span class="o">=</span><span class="s1">&#39;center&#39;</span><span class="p">,</span> <span class="n">va</span><span class="o">=</span><span class="s1">&#39;top&#39;</span><span class="p">)</span>
+    <span class="n">frame</span><span class="o">.</span><span class="n">plot</span><span class="p">([</span><span class="n">I3</span><span class="p">[</span><span class="mi">0</span><span class="p">]],</span> <span class="p">[</span><span class="n">I3</span><span class="p">[</span><span class="mi">1</span><span class="p">]],</span> <span class="n">marker</span><span class="o">=</span><span class="s1">&#39;o&#39;</span><span class="p">,</span> <span class="n">color</span><span class="o">=</span><span class="s1">&#39;g&#39;</span><span class="p">,</span> <span class="n">ms</span><span class="o">=</span><span class="mi">10</span><span class="p">)</span>
+    <span class="n">frame</span><span class="o">.</span><span class="n">text</span><span class="p">(</span><span class="n">I3</span><span class="p">[</span><span class="mi">0</span><span class="p">],</span> <span class="n">I3</span><span class="p">[</span><span class="mi">1</span><span class="p">]</span><span class="o">+</span><span class="mf">0.2</span><span class="p">,</span> <span class="sa">f</span><span class="s2">&quot;I3=M[2,2]=</span><span class="si">{</span><span class="n">I3val</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">,</span> <span class="n">ha</span><span class="o">=</span><span class="s1">&#39;center&#39;</span><span class="p">,</span> <span class="n">va</span><span class="o">=</span><span class="s1">&#39;top&#39;</span><span class="p">)</span>
+
+    <span class="n">i_f</span> <span class="o">=</span> <span class="mf">1.7</span><span class="p">;</span> <span class="n">j_f</span> <span class="o">=</span> <span class="mf">1.4</span>
+    <span class="n">Lambda</span> <span class="o">=</span> <span class="n">j_f</span> <span class="o">-</span> <span class="nb">int</span><span class="p">(</span><span class="n">j_f</span><span class="p">);</span> <span class="n">mu</span> <span class="o">=</span> <span class="n">i_f</span> <span class="o">-</span> <span class="nb">int</span><span class="p">(</span><span class="n">i_f</span><span class="p">)</span>
+    <span class="n">frame</span><span class="o">.</span><span class="n">plot</span><span class="p">([</span><span class="n">I0</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span><span class="o">+</span><span class="n">Lambda</span><span class="p">],</span> <span class="p">[</span><span class="n">I0</span><span class="p">[</span><span class="mi">1</span><span class="p">]</span><span class="o">+</span><span class="n">mu</span><span class="p">],</span> <span class="n">marker</span><span class="o">=</span><span class="s1">&#39;o&#39;</span><span class="p">,</span> <span class="n">color</span><span class="o">=</span><span class="s1">&#39;r&#39;</span><span class="p">,</span> <span class="n">ms</span><span class="o">=</span><span class="mi">10</span><span class="p">)</span>
+    <span class="n">frame</span><span class="o">.</span><span class="n">text</span><span class="p">(</span><span class="n">I0</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span><span class="o">+</span><span class="n">Lambda</span><span class="o">+</span><span class="mf">0.1</span><span class="p">,</span> <span class="n">I0</span><span class="p">[</span><span class="mi">1</span><span class="p">]</span><span class="o">+</span><span class="n">mu</span><span class="p">,</span> <span class="s2">&quot;Iip&quot;</span><span class="p">,</span> <span class="n">ha</span><span class="o">=</span><span class="s2">&quot;left&quot;</span><span class="p">)</span>
+    <span class="n">frame</span><span class="o">.</span><span class="n">arrow</span><span class="p">(</span><span class="n">I0</span><span class="p">[</span><span class="mi">0</span><span class="p">],</span> <span class="n">I0</span><span class="p">[</span><span class="mi">1</span><span class="p">],</span> <span class="n">Lambda</span><span class="p">,</span> <span class="mf">0.0</span><span class="p">,</span> <span class="n">head_length</span><span class="o">=</span><span class="mf">0.1</span><span class="p">,</span> <span class="n">length_includes_head</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span> <span class="n">width</span><span class="o">=</span><span class="mf">0.07</span><span class="p">)</span>
+    <span class="n">frame</span><span class="o">.</span><span class="n">text</span><span class="p">(</span><span class="n">I0</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span><span class="o">+</span><span class="n">Lambda</span><span class="o">+</span><span class="mf">0.05</span><span class="p">,</span> <span class="n">I0</span><span class="p">[</span><span class="mi">1</span><span class="p">],</span> <span class="sa">r</span><span class="s2">&quot;$\lambda$&quot;</span><span class="p">,</span> <span class="n">va</span><span class="o">=</span><span class="s1">&#39;top&#39;</span><span class="p">,</span> <span class="n">ha</span><span class="o">=</span><span class="s1">&#39;left&#39;</span><span class="p">)</span>
+    <span class="n">frame</span><span class="o">.</span><span class="n">arrow</span><span class="p">(</span><span class="n">I0</span><span class="p">[</span><span class="mi">0</span><span class="p">],</span> <span class="n">I0</span><span class="p">[</span><span class="mi">1</span><span class="p">],</span> <span class="mf">0.0</span><span class="p">,</span> <span class="o">+</span><span class="n">mu</span><span class="p">,</span> <span class="n">head_length</span><span class="o">=</span><span class="mf">0.1</span><span class="p">,</span> <span class="n">length_includes_head</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span> <span class="n">width</span><span class="o">=</span><span class="mf">0.07</span><span class="p">)</span>
+    <span class="n">frame</span><span class="o">.</span><span class="n">text</span><span class="p">(</span><span class="n">I0</span><span class="p">[</span><span class="mi">0</span><span class="p">],</span> <span class="n">I0</span><span class="p">[</span><span class="mi">1</span><span class="p">]</span><span class="o">+</span><span class="n">mu</span><span class="p">,</span> <span class="sa">r</span><span class="s2">&quot;$\mu$&quot;</span><span class="p">,</span> <span class="n">va</span><span class="o">=</span><span class="s1">&#39;top&#39;</span><span class="p">,</span> <span class="n">ha</span><span class="o">=</span><span class="s2">&quot;right&quot;</span><span class="p">)</span>
+    <span class="n">frame</span><span class="o">.</span><span class="n">plot</span><span class="p">([</span><span class="n">I0</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span><span class="o">+</span><span class="n">Lambda</span><span class="p">,</span> <span class="n">I0</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span><span class="o">+</span><span class="n">Lambda</span><span class="p">],</span> <span class="p">[</span><span class="n">I0</span><span class="p">[</span><span class="mi">1</span><span class="p">],</span> <span class="n">I0</span><span class="p">[</span><span class="mi">1</span><span class="p">]</span><span class="o">+</span><span class="n">mu</span><span class="p">],</span> <span class="s1">&#39;r&#39;</span><span class="p">,</span> <span class="n">ls</span><span class="o">=</span><span class="s1">&#39;dotted&#39;</span><span class="p">)</span>
+    <span class="n">frame</span><span class="o">.</span><span class="n">plot</span><span class="p">([</span><span class="n">I0</span><span class="p">[</span><span class="mi">0</span><span class="p">],</span> <span class="n">I0</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span><span class="o">+</span><span class="n">Lambda</span><span class="p">],</span> <span class="p">[</span><span class="n">I0</span><span class="p">[</span><span class="mi">1</span><span class="p">]</span><span class="o">+</span><span class="n">mu</span><span class="p">,</span> <span class="n">I0</span><span class="p">[</span><span class="mi">1</span><span class="p">]</span><span class="o">+</span><span class="n">mu</span><span class="p">],</span> <span class="s1">&#39;r&#39;</span><span class="p">,</span> <span class="n">ls</span><span class="o">=</span><span class="s1">&#39;dotted&#39;</span><span class="p">)</span>
+
+    <span class="n">frame</span><span class="o">.</span><span class="n">set_xlim</span><span class="p">(</span><span class="mi">0</span><span class="p">,</span> <span class="mi">3</span><span class="p">)</span>
+    <span class="n">frame</span><span class="o">.</span><span class="n">set_ylim</span><span class="p">(</span><span class="mi">3</span><span class="p">,</span> <span class="mi">0</span><span class="p">)</span>
+    <span class="n">frame</span><span class="o">.</span><span class="n">set_xticks</span><span class="p">([</span><span class="mi">0</span><span class="p">,</span><span class="mi">1</span><span class="p">,</span><span class="mi">2</span><span class="p">,</span><span class="mi">3</span><span class="p">])</span>
+    <span class="n">frame</span><span class="o">.</span><span class="n">set_yticks</span><span class="p">([</span><span class="mi">0</span><span class="p">,</span><span class="mi">1</span><span class="p">,</span><span class="mi">2</span><span class="p">,</span><span class="mi">3</span><span class="p">])</span>
+    <span class="n">frame</span><span class="o">.</span><span class="n">grid</span><span class="p">(</span><span class="kc">True</span><span class="p">)</span>
+    <span class="n">frame</span><span class="o">.</span><span class="n">set_xlabel</span><span class="p">(</span><span class="s2">&quot;j&quot;</span><span class="p">,</span> <span class="n">fontsize</span><span class="o">=</span><span class="mi">20</span><span class="p">)</span>
+    <span class="n">frame</span><span class="o">.</span><span class="n">set_ylabel</span><span class="p">(</span><span class="s2">&quot;i&quot;</span><span class="p">,</span> <span class="n">fontsize</span><span class="o">=</span><span class="mi">20</span><span class="p">)</span>
+    <span class="n">s</span> <span class="o">=</span> <span class="s2">&quot;Bilinear interpolation</span><span class="se">\n</span><span class="s2">&quot;</span>
+    <span class="n">s</span> <span class="o">+=</span> <span class="s2">&quot;$I_</span><span class="si">{ip}</span><span class="s2">= (1-\lambda)(1-\mu)\, I_0 + \lambda(1-\mu)\, I_1 + \mu (1-\lambda)\,I_2+\lambda \mu\, I_3$&quot;</span>
+    <span class="c1">#fig.suptitle(s, fontsize=20)</span>
+    <span class="n">frame</span><span class="o">.</span><span class="n">set_title</span><span class="p">(</span><span class="n">s</span><span class="p">)</span>
+
+    <span class="n">show</span><span class="p">()</span>
+</pre></div>
+</div>
+</div>
+<div class="nboutput nblast docutils container">
+<div class="prompt empty docutils container">
+</div>
+<div class="output_area docutils container">
+<img alt="../_images/Notebooks_bilinearinterpol_16_0.png" src="../_images/Notebooks_bilinearinterpol_16_0.png" />
+</div>
+</div>
+</section>
+<section id="The-implementation-of-the-algorithm-in-a-function">
+<h3><span class="section-number">32.2.4. </span>The implementation of the algorithm in a function<a class="headerlink" href="#The-implementation-of-the-algorithm-in-a-function" title="Link to this heading">¶</a></h3>
+<div class="nbinput nblast docutils container">
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[8]:
+</pre></div>
+</div>
+<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="kn">import</span> <span class="nn">numpy</span> <span class="k">as</span> <span class="nn">np</span>
+
+<span class="k">def</span> <span class="nf">bilinearIP</span><span class="p">(</span><span class="n">I</span><span class="p">,</span> <span class="n">col</span><span class="p">,</span> <span class="n">row</span><span class="p">):</span> <span class="c1"># Make it X, Y compatible</span>
+<span class="w">    </span><span class="sd">&#39;&#39;&#39;I is a two dimensional array and iF,jF is the position at</span>
+<span class="sd">       which we want to interpolate. &#39;iF&#39; must be bigger or equal to 0 and</span>
+<span class="sd">       smaller than the highest index of I in i. The same applies for jF&#39;&#39;&#39;</span>
+    <span class="n">rowlen</span><span class="p">,</span> <span class="n">collen</span><span class="o">=</span> <span class="n">I</span><span class="o">.</span><span class="n">shape</span>
+    <span class="n">i</span> <span class="o">=</span> <span class="nb">int</span><span class="p">(</span><span class="n">row</span><span class="p">)</span>
+    <span class="n">j</span> <span class="o">=</span> <span class="nb">int</span><span class="p">(</span><span class="n">col</span><span class="p">)</span>
+    <span class="k">if</span> <span class="n">row</span> <span class="o">-</span> <span class="n">i</span> <span class="o">==</span> <span class="mi">0</span> <span class="ow">and</span> <span class="n">col</span> <span class="o">-</span> <span class="n">j</span> <span class="o">==</span> <span class="mi">0</span><span class="p">:</span>  <span class="c1"># Falls exactly on a gridpoint</span>
+        <span class="k">return</span> <span class="n">I</span><span class="p">[</span><span class="n">i</span><span class="p">,</span><span class="n">j</span><span class="p">]</span>
+
+    <span class="n">inbounds</span> <span class="o">=</span> <span class="p">(</span><span class="mi">0</span> <span class="o">&lt;=</span> <span class="n">j</span> <span class="o">&lt;=</span> <span class="n">collen</span><span class="o">-</span><span class="mi">1</span><span class="p">)</span> <span class="ow">and</span> <span class="p">(</span><span class="mi">0</span> <span class="o">&lt;=</span> <span class="n">i</span> <span class="o">&lt;=</span> <span class="n">rowlen</span><span class="o">-</span><span class="mi">1</span><span class="p">)</span>
+    <span class="k">if</span> <span class="ow">not</span> <span class="n">inbounds</span><span class="p">:</span>
+        <span class="n">Iintp</span> <span class="o">=</span> <span class="kc">None</span>
+    <span class="k">else</span><span class="p">:</span>
+        <span class="n">mu</span> <span class="o">=</span>  <span class="n">row</span> <span class="o">-</span> <span class="n">i</span>
+        <span class="n">Lambda</span> <span class="o">=</span> <span class="n">col</span> <span class="o">-</span> <span class="n">j</span>
+        <span class="c1"># If we are at the last pixel at the right or bottom, then there</span>
+        <span class="c1"># is not a neighbour, so we take the pixel itself as the neighbour</span>
+        <span class="n">I0</span> <span class="o">=</span> <span class="n">I</span><span class="p">[</span><span class="n">i</span><span class="p">,</span><span class="n">j</span><span class="p">]</span>
+        <span class="n">I1</span> <span class="o">=</span> <span class="n">I</span><span class="p">[</span><span class="n">i</span><span class="p">,</span><span class="nb">min</span><span class="p">(</span><span class="n">j</span><span class="o">+</span><span class="mi">1</span><span class="p">,</span><span class="n">collen</span><span class="o">-</span><span class="mi">1</span><span class="p">)]</span>
+        <span class="n">I2</span> <span class="o">=</span> <span class="n">I</span><span class="p">[</span><span class="nb">min</span><span class="p">(</span><span class="n">i</span><span class="o">+</span><span class="mi">1</span><span class="p">,</span><span class="n">rowlen</span><span class="o">-</span><span class="mi">1</span><span class="p">),</span><span class="n">j</span><span class="p">]</span>
+        <span class="n">I3</span> <span class="o">=</span> <span class="n">I</span><span class="p">[</span><span class="nb">min</span><span class="p">(</span><span class="n">i</span><span class="o">+</span><span class="mi">1</span><span class="p">,</span><span class="n">rowlen</span><span class="o">-</span><span class="mi">1</span><span class="p">),</span><span class="nb">min</span><span class="p">(</span><span class="n">j</span><span class="o">+</span><span class="mi">1</span><span class="p">,</span><span class="n">collen</span><span class="o">-</span><span class="mi">1</span><span class="p">)]</span>
+        <span class="n">Iintp</span> <span class="o">=</span> <span class="p">(</span><span class="mi">1</span><span class="o">-</span><span class="n">Lambda</span><span class="p">)</span><span class="o">*</span><span class="p">(</span><span class="mi">1</span><span class="o">-</span><span class="n">mu</span><span class="p">)</span><span class="o">*</span><span class="n">I0</span> <span class="o">+</span> <span class="n">Lambda</span><span class="o">*</span><span class="p">(</span><span class="mi">1</span><span class="o">-</span><span class="n">mu</span><span class="p">)</span><span class="o">*</span><span class="n">I1</span> <span class="o">+</span> <span class="n">mu</span><span class="o">*</span><span class="p">(</span><span class="mi">1</span><span class="o">-</span><span class="n">Lambda</span><span class="p">)</span><span class="o">*</span><span class="n">I2</span> <span class="o">+</span> <span class="n">Lambda</span><span class="o">*</span><span class="n">mu</span><span class="o">*</span><span class="n">I3</span>
+    <span class="k">return</span><span class="p">(</span><span class="n">Iintp</span><span class="p">)</span>
+</pre></div>
+</div>
+</div>
+<div class="nbinput docutils container">
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[9]:
+</pre></div>
+</div>
+<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="n">I</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">([[</span><span class="mi">0</span><span class="p">,</span><span class="mi">0</span><span class="p">,</span><span class="mi">0</span><span class="p">,</span><span class="mi">0</span><span class="p">],</span> <span class="p">[</span><span class="mi">0</span><span class="p">,</span><span class="mi">10</span><span class="p">,</span><span class="mi">20</span><span class="p">,</span><span class="mi">0</span><span class="p">],</span> <span class="p">[</span><span class="mi">0</span><span class="p">,</span><span class="mi">30</span><span class="p">,</span><span class="mi">40</span><span class="p">,</span><span class="mi">0</span><span class="p">],</span> <span class="p">[</span><span class="mi">0</span><span class="p">,</span><span class="mi">0</span><span class="p">,</span><span class="mi">0</span><span class="p">,</span><span class="mi">0</span><span class="p">]])</span>
+<span class="nb">print</span><span class="p">(</span><span class="n">I</span><span class="p">)</span>
+
+<span class="n">row_y</span> <span class="o">=</span> <span class="mf">1.66</span> <span class="c1"># Row position is y value</span>
+<span class="n">col_x</span> <span class="o">=</span> <span class="mf">1.4</span>  <span class="c1"># Column position is x value</span>
+
+<span class="n">Iintp</span> <span class="o">=</span> <span class="n">bilinearIP</span><span class="p">(</span><span class="n">I</span><span class="p">,</span> <span class="n">col_x</span><span class="p">,</span> <span class="n">row_y</span><span class="p">)</span>
+<span class="k">if</span> <span class="n">Iintp</span><span class="p">:</span>
+    <span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;The interpolated intensity at i,j=</span><span class="si">{</span><span class="n">row_y</span><span class="si">}</span><span class="s2">,</span><span class="si">{</span><span class="n">col_x</span><span class="si">}</span><span class="s2"> =&gt; x, y=</span><span class="si">{</span><span class="n">col_x</span><span class="si">}{</span><span class="n">row_y</span><span class="si">}</span><span class="s2"> is </span><span class="si">{</span><span class="n">Iintp</span><span class="si">:</span><span class="s2">.6f</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
+<span class="k">else</span><span class="p">:</span>
+    <span class="nb">print</span><span class="p">(</span><span class="s2">&quot;One of the indices was outside the limits&quot;</span><span class="p">)</span>
+</pre></div>
+</div>
+</div>
+<div class="nboutput nblast docutils container">
+<div class="prompt empty docutils container">
+</div>
+<div class="output_area docutils container">
+<div class="highlight"><pre>
+[[ 0  0  0  0]
+ [ 0 10 20  0]
+ [ 0 30 40  0]
+ [ 0  0  0  0]]
+The interpolated intensity at i,j=1.66,1.4 =&gt; x, y=1.41.66 is 27.200000
+</pre></div></div>
+</div>
+</section>
+<section id="Verify-the-result-with-a-SciPy-routine">
+<h3><span class="section-number">32.2.5. </span>Verify the result with a SciPy routine<a class="headerlink" href="#Verify-the-result-with-a-SciPy-routine" title="Link to this heading">¶</a></h3>
+<p>We use function <code class="docutils literal notranslate"><span class="pre">scipy.interpolate.interp2d</span></code> to check our result. The minimum amount of input parameters for this function is:</p>
+<p><code class="docutils literal notranslate"><span class="pre">scipy.interpolate.interp2d(x,</span> <span class="pre">y,</span> <span class="pre">z)</span></code></p>
+<p><code class="docutils literal notranslate"><span class="pre">x</span></code>, <code class="docutils literal notranslate"><span class="pre">y</span></code> and <code class="docutils literal notranslate"><span class="pre">z</span></code> are arrays of values used to approximate some function <code class="docutils literal notranslate"><span class="pre">f:</span> <span class="pre">z</span> <span class="pre">=</span> <span class="pre">f(x,</span> <span class="pre">y)</span></code>.</p>
+<p>So now the input is defined in Cartesian coordinates and this is confusing. But it is explicitly stated that the coordinates in <span class="math notranslate nohighlight">\(x\)</span> and <span class="math notranslate nohighlight">\(y\)</span> define <span class="math notranslate nohighlight">\(z=f(x,y)\)</span>. So if <span class="math notranslate nohighlight">\(z\)</span> is a two dimensional NumPy array and define <span class="math notranslate nohighlight">\(x\)</span> and <span class="math notranslate nohighlight">\(y\)</span> as values in a rectangular grid, then we should expect the same interpolated value as our function <code class="docutils literal notranslate"><span class="pre">bilinearIP()</span></code>.</p>
+<p><code class="docutils literal notranslate"><span class="pre">interp2d()</span></code> returns a <strong>function</strong> whose call method uses interpolation to find the value of new points. We call it with one or more values for <span class="math notranslate nohighlight">\(X_{ip}\)</span> and <span class="math notranslate nohighlight">\(Y_{ip}\)</span> for which we want interpolated values. By default, the interpolation is (bi)linear. In the next cell we demonstrate this function using the same matrix with intensities and the same interpolation position <code class="docutils literal notranslate"><span class="pre">Xip</span></code> and <code class="docutils literal notranslate"><span class="pre">Yip</span></code>.</p>
+<div class="nbinput docutils container">
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[10]:
+</pre></div>
+</div>
+<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="c1"># !! interp2d() is deprecated</span>
+<span class="kn">from</span> <span class="nn">scipy.interpolate</span> <span class="kn">import</span> <span class="n">RegularGridInterpolator</span>
+
+<span class="n">I</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">([[</span><span class="mi">0</span><span class="p">,</span><span class="mi">0</span><span class="p">,</span><span class="mi">0</span><span class="p">,</span><span class="mi">0</span><span class="p">],</span> <span class="p">[</span><span class="mi">0</span><span class="p">,</span><span class="mi">10</span><span class="p">,</span><span class="mi">20</span><span class="p">,</span><span class="mi">0</span><span class="p">],</span> <span class="p">[</span><span class="mi">0</span><span class="p">,</span><span class="mi">30</span><span class="p">,</span><span class="mi">40</span><span class="p">,</span><span class="mi">0</span><span class="p">],</span> <span class="p">[</span><span class="mi">0</span><span class="p">,</span><span class="mi">0</span><span class="p">,</span><span class="mi">0</span><span class="p">,</span><span class="mi">0</span><span class="p">]])</span>
+<span class="nb">print</span><span class="p">(</span><span class="n">I</span><span class="p">)</span>
+
+<span class="n">rowindices</span> <span class="o">=</span> <span class="nb">range</span><span class="p">(</span><span class="n">I</span><span class="o">.</span><span class="n">shape</span><span class="p">[</span><span class="mi">0</span><span class="p">])</span>
+<span class="n">colindices</span> <span class="o">=</span> <span class="nb">range</span><span class="p">(</span><span class="n">I</span><span class="o">.</span><span class="n">shape</span><span class="p">[</span><span class="mi">1</span><span class="p">])</span>
+
+<span class="n">col_x</span> <span class="o">=</span> <span class="mf">1.4</span>
+<span class="n">row_y</span> <span class="o">=</span> <span class="mf">1.66</span>
+
+<span class="c1"># Interpolator example: https://gist.github.com/ev-br/8544371b40f414b7eaf3fe6217209bff</span>
+<span class="n">do_interpol</span> <span class="o">=</span> <span class="n">RegularGridInterpolator</span><span class="p">(</span> <span class="p">(</span><span class="n">colindices</span><span class="p">,</span> <span class="n">rowindices</span><span class="p">),</span> <span class="n">I</span><span class="o">.</span><span class="n">T</span><span class="p">,</span> <span class="n">method</span><span class="o">=</span><span class="s1">&#39;linear&#39;</span><span class="p">)</span>
+<span class="n">Iintp</span> <span class="o">=</span> <span class="n">do_interpol</span> <span class="p">((</span><span class="n">col_x</span><span class="p">,</span> <span class="n">row_y</span><span class="p">)</span> <span class="p">)</span>
+<span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;The interpolated intensity at x,y=</span><span class="si">{</span><span class="n">col_x</span><span class="si">}</span><span class="s2">,</span><span class="si">{</span><span class="n">row_y</span><span class="si">}</span><span class="s2"> is </span><span class="si">{</span><span class="n">Iintp</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
+</pre></div>
+</div>
+</div>
+<div class="nboutput nblast docutils container">
+<div class="prompt empty docutils container">
+</div>
+<div class="output_area docutils container">
+<div class="highlight"><pre>
+[[ 0  0  0  0]
+ [ 0 10 20  0]
+ [ 0 30 40  0]
+ [ 0  0  0  0]]
+The interpolated intensity at x,y=1.4,1.66 is 27.199999999999996
+</pre></div></div>
+</div>
+</section>
+<section id="An-implementation-using-matrix-multiplications">
+<h3><span class="section-number">32.2.6. </span>An implementation using matrix multiplications<a class="headerlink" href="#An-implementation-using-matrix-multiplications" title="Link to this heading">¶</a></h3>
+<p>Our interpolation formula</p>
+<div class="math notranslate nohighlight">
+\[I_{ip} = (1-\lambda)(1-\mu)I_0 + \lambda(1-\mu)I_1 + \mu (1-\lambda)I_2+\lambda \mu I_3\]</div>
+<p>can also be written with matrix multiplications as follows:</p>
+<div class="math notranslate nohighlight">
+\[\begin{split}I_{ip} = \begin{bmatrix}1-\mu&amp;\mu \end{bmatrix} \begin{bmatrix}I_{0} &amp; I_{1}\\I_{2} &amp; I_{3}\end{bmatrix} \begin{bmatrix}1-\lambda\\ \lambda \end{bmatrix}\end{split}\]</div>
+<div class="nbinput docutils container">
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[11]:
+</pre></div>
+</div>
+<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="n">Xip</span> <span class="o">=</span> <span class="mf">1.4</span>
+<span class="n">Yip</span> <span class="o">=</span> <span class="mf">1.66</span>
+
+<span class="n">i</span> <span class="o">=</span> <span class="nb">int</span><span class="p">(</span><span class="n">Yip</span><span class="p">)</span>
+<span class="n">j</span> <span class="o">=</span> <span class="nb">int</span><span class="p">(</span><span class="n">Xip</span><span class="p">)</span>   <span class="c1"># Columns</span>
+<span class="n">M</span> <span class="o">=</span> <span class="n">I</span><span class="p">[</span><span class="n">i</span><span class="p">:</span><span class="n">i</span><span class="o">+</span><span class="mi">2</span><span class="p">,</span> <span class="n">j</span><span class="p">:</span><span class="n">j</span><span class="o">+</span><span class="mi">2</span><span class="p">]</span>  <span class="c1"># Get the relevant matrix, must be a 2x2 matrix</span>
+<span class="nb">print</span><span class="p">(</span><span class="s2">&quot;Sliced Matrix:</span><span class="se">\n</span><span class="s2">&quot;</span><span class="p">,</span><span class="n">M</span><span class="p">)</span>
+
+<span class="n">Lambda</span> <span class="o">=</span> <span class="n">Xip</span> <span class="o">-</span> <span class="nb">int</span><span class="p">(</span><span class="n">Xip</span><span class="p">)</span>
+<span class="n">mu</span> <span class="o">=</span> <span class="n">Yip</span> <span class="o">-</span> <span class="nb">int</span><span class="p">(</span><span class="n">Yip</span><span class="p">)</span>
+
+<span class="n">A</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">([</span><span class="mi">1</span><span class="o">-</span><span class="n">mu</span><span class="p">,</span> <span class="n">mu</span><span class="p">])</span>
+<span class="n">B</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">([</span><span class="mi">1</span><span class="o">-</span><span class="n">Lambda</span><span class="p">,</span> <span class="n">Lambda</span><span class="p">])</span>
+<span class="n">Iintp</span> <span class="o">=</span> <span class="n">A</span><span class="o">.</span><span class="n">T</span><span class="o">.</span><span class="n">dot</span><span class="p">(</span><span class="n">M</span><span class="p">)</span><span class="o">.</span><span class="n">dot</span><span class="p">(</span><span class="n">B</span><span class="p">)</span>
+<span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;The interpolated intensity at x,y=</span><span class="si">{</span><span class="n">Xip</span><span class="si">}</span><span class="s2">,</span><span class="si">{</span><span class="n">Yip</span><span class="si">}</span><span class="s2"> is </span><span class="si">{</span><span class="n">Iintp</span><span class="si">:</span><span class="s2">.6f</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
+</pre></div>
+</div>
+</div>
+<div class="nboutput nblast docutils container">
+<div class="prompt empty docutils container">
+</div>
+<div class="output_area docutils container">
+<div class="highlight"><pre>
+Sliced Matrix:
+ [[10 20]
+ [30 40]]
+The interpolated intensity at x,y=1.4,1.66 is 27.200000
+</pre></div></div>
+</div>
+</section>
+<section id="Using-function-multi_dot">
+<h3><span class="section-number">32.2.7. </span>Using function <code class="docutils literal notranslate"><span class="pre">multi_dot</span></code><a class="headerlink" href="#Using-function-multi_dot" title="Link to this heading">¶</a></h3>
+<p>The dot products in the previous example can be calculated with one call to function <code class="docutils literal notranslate"><span class="pre">scipy.linalg.multi_dot</span></code></p>
+<p>We re-use vectors and matrix from the previous example.</p>
+<p>Note from the documentation:</p>
+<div class="line-block">
+<div class="line">If the first argument in <code class="docutils literal notranslate"><span class="pre">multi_dot</span></code> is 1-D it is treated as row vector. If the last argument is 1-D it is treated as column vector.</div>
+<div class="line">The other arguments must be 2-D.</div>
+</div>
+<div class="nbinput docutils container">
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[12]:
+</pre></div>
+</div>
+<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="kn">from</span> <span class="nn">numpy.linalg</span> <span class="kn">import</span> <span class="n">multi_dot</span>
+<span class="n">ip</span> <span class="o">=</span> <span class="n">multi_dot</span><span class="p">((</span><span class="n">A</span><span class="p">,</span><span class="n">M</span><span class="p">,</span><span class="n">B</span><span class="p">))</span>
+<span class="nb">print</span><span class="p">(</span><span class="n">ip</span><span class="p">)</span>
+</pre></div>
+</div>
+</div>
+<div class="nboutput nblast docutils container">
+<div class="prompt empty docutils container">
+</div>
+<div class="output_area docutils container">
+<div class="highlight"><pre>
+27.2
+</pre></div></div>
+</div>
+</section>
+<section id="A-function-using-multi_dot-for-bilinear-interpolation">
+<h3><span class="section-number">32.2.8. </span>A function using multi_dot for bilinear interpolation<a class="headerlink" href="#A-function-using-multi_dot-for-bilinear-interpolation" title="Link to this heading">¶</a></h3>
+<div class="nbinput docutils container">
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[13]:
+</pre></div>
+</div>
+<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="k">def</span> <span class="nf">bilinearIP_matrix</span><span class="p">(</span><span class="n">I</span><span class="p">,</span> <span class="n">X</span><span class="p">,</span> <span class="n">Y</span><span class="p">):</span>
+<span class="w">    </span><span class="sd">&#39;&#39;&#39;I is a two dimensional array and X,Y is the position at</span>
+<span class="sd">       which we want to interpolate. X must be bigger or equal to 0 and</span>
+<span class="sd">       smaller than the highest index of I. The same applies for Y&#39;&#39;&#39;</span>
+    <span class="n">leny</span><span class="p">,</span> <span class="n">lenx</span> <span class="o">=</span> <span class="n">I</span><span class="o">.</span><span class="n">shape</span>
+    <span class="n">j</span> <span class="o">=</span> <span class="nb">int</span><span class="p">(</span><span class="n">X</span><span class="p">)</span>
+    <span class="n">i</span> <span class="o">=</span> <span class="nb">int</span><span class="p">(</span><span class="n">Y</span><span class="p">)</span>
+    <span class="n">inbounds</span> <span class="o">=</span> <span class="p">(</span><span class="mi">0</span> <span class="o">&lt;=</span> <span class="n">X</span> <span class="o">&lt;=</span> <span class="n">lenx</span><span class="o">-</span><span class="mi">1</span><span class="p">)</span> <span class="ow">and</span> <span class="p">(</span><span class="mi">0</span> <span class="o">&lt;=</span> <span class="n">Y</span> <span class="o">&lt;=</span> <span class="n">leny</span><span class="o">-</span><span class="mi">1</span><span class="p">)</span>
+    <span class="k">if</span> <span class="ow">not</span> <span class="n">inbounds</span><span class="p">:</span>
+        <span class="n">Iintp</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">NaN</span>
+    <span class="k">else</span><span class="p">:</span>
+        <span class="c1"># Take care of right and bottom border</span>
+        <span class="k">if</span> <span class="n">j</span> <span class="o">==</span> <span class="n">lenx</span><span class="o">-</span><span class="mi">1</span><span class="p">:</span>
+            <span class="n">j</span> <span class="o">-=</span> <span class="mi">1</span>
+            <span class="n">Lambda</span> <span class="o">=</span> <span class="mf">1.0</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="n">Lambda</span> <span class="o">=</span> <span class="n">X</span> <span class="o">-</span> <span class="nb">int</span><span class="p">(</span><span class="n">X</span><span class="p">)</span>
+        <span class="k">if</span> <span class="n">i</span> <span class="o">==</span> <span class="n">leny</span><span class="o">-</span><span class="mi">1</span><span class="p">:</span>
+            <span class="n">i</span> <span class="o">-=</span> <span class="mi">1</span>
+            <span class="n">mu</span> <span class="o">=</span> <span class="mf">1.0</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="n">mu</span> <span class="o">=</span> <span class="n">Y</span> <span class="o">-</span> <span class="nb">int</span><span class="p">(</span><span class="n">Y</span><span class="p">)</span>
+
+        <span class="n">A</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">([</span><span class="mi">1</span><span class="o">-</span><span class="n">mu</span><span class="p">,</span> <span class="n">mu</span><span class="p">])</span>
+        <span class="n">B</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">([</span><span class="mi">1</span><span class="o">-</span><span class="n">Lambda</span><span class="p">,</span> <span class="n">Lambda</span><span class="p">])</span>
+        <span class="n">M</span> <span class="o">=</span> <span class="n">I</span><span class="p">[</span><span class="n">i</span><span class="p">:</span><span class="n">i</span><span class="o">+</span><span class="mi">2</span><span class="p">,</span> <span class="n">j</span><span class="p">:</span><span class="n">j</span><span class="o">+</span><span class="mi">2</span><span class="p">]</span>
+        <span class="n">Iintp</span> <span class="o">=</span> <span class="n">A</span><span class="o">.</span><span class="n">T</span><span class="o">.</span><span class="n">dot</span><span class="p">(</span><span class="n">M</span><span class="p">)</span><span class="o">.</span><span class="n">dot</span><span class="p">(</span><span class="n">B</span><span class="p">)</span>
+    <span class="k">return</span><span class="p">(</span><span class="n">Iintp</span><span class="p">)</span>
+
+<span class="n">I</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">([[</span><span class="mi">0</span><span class="p">,</span><span class="mi">0</span><span class="p">,</span><span class="mi">0</span><span class="p">,</span><span class="mi">0</span><span class="p">],</span> <span class="p">[</span><span class="mi">0</span><span class="p">,</span><span class="mi">10</span><span class="p">,</span><span class="mi">20</span><span class="p">,</span><span class="mi">0</span><span class="p">],</span> <span class="p">[</span><span class="mi">0</span><span class="p">,</span><span class="mi">30</span><span class="p">,</span><span class="mi">40</span><span class="p">,</span><span class="mi">0</span><span class="p">],</span> <span class="p">[</span><span class="mi">0</span><span class="p">,</span><span class="mi">0</span><span class="p">,</span><span class="mi">0</span><span class="p">,</span><span class="mi">0</span><span class="p">]])</span>
+<span class="nb">print</span><span class="p">(</span><span class="n">I</span><span class="p">)</span>
+
+<span class="n">Xip</span> <span class="o">=</span> <span class="mf">1.4</span><span class="p">;</span> <span class="n">Yip</span> <span class="o">=</span> <span class="mf">1.66</span>
+
+<span class="n">Iintp</span> <span class="o">=</span> <span class="n">bilinearIP</span><span class="p">(</span><span class="n">I</span><span class="p">,</span> <span class="n">Xip</span><span class="p">,</span> <span class="n">Yip</span><span class="p">)</span>
+<span class="k">if</span> <span class="n">np</span><span class="o">.</span><span class="n">isnan</span><span class="p">(</span><span class="n">Iintp</span><span class="p">):</span>
+    <span class="nb">print</span><span class="p">(</span><span class="s2">&quot;One of the indices was outside the limits&quot;</span><span class="p">)</span>
+<span class="k">else</span><span class="p">:</span>
+    <span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;The interpolated intensity at x,y=</span><span class="si">{</span><span class="n">Xip</span><span class="si">}</span><span class="s2">,</span><span class="si">{</span><span class="n">Yip</span><span class="si">}</span><span class="s2"> is </span><span class="si">{</span><span class="n">Iintp</span><span class="si">:</span><span class="s2">.6f</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
+</pre></div>
+</div>
+</div>
+<div class="nboutput nblast docutils container">
+<div class="prompt empty docutils container">
+</div>
+<div class="output_area docutils container">
+<div class="highlight"><pre>
+[[ 0  0  0  0]
+ [ 0 10 20  0]
+ [ 0 30 40  0]
+ [ 0  0  0  0]]
+The interpolated intensity at x,y=1.4,1.66 is 27.200000
+</pre></div></div>
+</div>
+</section>
+</section>
+<section id="Image-interpolation">
+<h2><span class="section-number">32.3. </span>Image interpolation<a class="headerlink" href="#Image-interpolation" title="Link to this heading">¶</a></h2>
+<div class="line-block">
+<div class="line">One often starts to define what should be interpolated.</div>
+<div class="line">Assume we have an image, represented by the data</div>
+</div>
+<p><code class="docutils literal notranslate"><span class="pre">I</span> <span class="pre">=</span> <span class="pre">np.arange(60).reshape(6,10)</span></code></p>
+<div class="nbinput docutils container">
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[14]:
+</pre></div>
+</div>
+<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="n">I</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">arange</span><span class="p">(</span><span class="mi">30</span><span class="p">)</span><span class="o">.</span><span class="n">reshape</span><span class="p">(</span><span class="mi">5</span><span class="p">,</span><span class="mi">6</span><span class="p">)</span>
+<span class="nb">print</span><span class="p">(</span><span class="n">I</span><span class="p">)</span>
+</pre></div>
+</div>
+</div>
+<div class="nboutput nblast docutils container">
+<div class="prompt empty docutils container">
+</div>
+<div class="output_area docutils container">
+<div class="highlight"><pre>
+[[ 0  1  2  3  4  5]
+ [ 6  7  8  9 10 11]
+ [12 13 14 15 16 17]
+ [18 19 20 21 22 23]
+ [24 25 26 27 28 29]]
+</pre></div></div>
+</div>
+<p>We want to compare this image to another one which has 10 rows and 12 columns. Then we need interpolated values to fill the new image. First we create the new image. Then we loop over all <span class="math notranslate nohighlight">\(x\)</span> and <span class="math notranslate nohighlight">\(y\)</span> values in the new array and scale these positions to correspond to positions in the original image:</p>
+<div class="nbinput nblast docutils container">
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[15]:
+</pre></div>
+</div>
+<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="n">rows</span> <span class="o">=</span> <span class="mi">10</span><span class="p">;</span> <span class="n">cols</span> <span class="o">=</span> <span class="mi">12</span>
+<span class="n">Iout</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">zeros</span><span class="p">((</span><span class="n">rows</span><span class="p">,</span><span class="n">cols</span><span class="p">))</span> <span class="o">*</span> <span class="n">np</span><span class="o">.</span><span class="n">nan</span>
+<span class="n">Y</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">linspace</span><span class="p">(</span><span class="mi">0</span><span class="p">,</span> <span class="n">I</span><span class="o">.</span><span class="n">shape</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span><span class="o">-</span><span class="mi">1</span><span class="p">,</span> <span class="n">rows</span><span class="p">)</span>
+<span class="n">X</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">linspace</span><span class="p">(</span><span class="mi">0</span><span class="p">,</span> <span class="n">I</span><span class="o">.</span><span class="n">shape</span><span class="p">[</span><span class="mi">1</span><span class="p">]</span><span class="o">-</span><span class="mi">1</span><span class="p">,</span> <span class="n">cols</span><span class="p">)</span>
+
+<span class="k">for</span> <span class="n">i</span><span class="p">,</span><span class="n">Yip</span> <span class="ow">in</span> <span class="nb">enumerate</span><span class="p">(</span><span class="n">Y</span><span class="p">):</span>
+    <span class="k">for</span> <span class="n">j</span><span class="p">,</span><span class="n">Xip</span> <span class="ow">in</span> <span class="nb">enumerate</span><span class="p">(</span><span class="n">X</span><span class="p">):</span>
+        <span class="n">Iout</span><span class="p">[</span><span class="n">i</span><span class="p">,</span><span class="n">j</span><span class="p">]</span> <span class="o">=</span> <span class="n">bilinearIP</span><span class="p">(</span><span class="n">I</span><span class="p">,</span> <span class="n">Xip</span><span class="p">,</span> <span class="n">Yip</span><span class="p">)</span>
+
+<span class="c1"># print(Iout)</span>
+</pre></div>
+</div>
+</div>
+<div class="nbinput docutils container">
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[16]:
+</pre></div>
+</div>
+<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="kn">from</span> <span class="nn">matplotlib.pyplot</span> <span class="kn">import</span> <span class="n">figure</span><span class="p">,</span> <span class="n">show</span>
+
+<span class="n">fig</span> <span class="o">=</span> <span class="n">figure</span><span class="p">()</span>
+<span class="n">fr1</span> <span class="o">=</span> <span class="n">fig</span><span class="o">.</span><span class="n">add_subplot</span><span class="p">(</span><span class="mi">1</span><span class="p">,</span><span class="mi">2</span><span class="p">,</span><span class="mi">1</span><span class="p">)</span>
+<span class="n">fr2</span> <span class="o">=</span> <span class="n">fig</span><span class="o">.</span><span class="n">add_subplot</span><span class="p">(</span><span class="mi">1</span><span class="p">,</span><span class="mi">2</span><span class="p">,</span><span class="mi">2</span><span class="p">)</span>
+<span class="n">fr1</span><span class="o">.</span><span class="n">imshow</span><span class="p">(</span><span class="n">I</span><span class="p">,</span> <span class="n">interpolation</span><span class="o">=</span><span class="s1">&#39;none&#39;</span><span class="p">)</span>
+<span class="n">fr2</span><span class="o">.</span><span class="n">imshow</span><span class="p">(</span><span class="n">Iout</span><span class="p">,</span> <span class="n">interpolation</span><span class="o">=</span><span class="s1">&#39;none&#39;</span><span class="p">)</span>
+<span class="n">show</span><span class="p">()</span>
+</pre></div>
+</div>
+</div>
+<div class="nboutput nblast docutils container">
+<div class="prompt empty docutils container">
+</div>
+<div class="output_area docutils container">
+<img alt="../_images/Notebooks_bilinearinterpol_32_0.png" src="../_images/Notebooks_bilinearinterpol_32_0.png" />
+</div>
+</div>
+<section id="Template-program-for-regridding">
+<h3><span class="section-number">32.3.1. </span>Template program for regridding<a class="headerlink" href="#Template-program-for-regridding" title="Link to this heading">¶</a></h3>
+<div class="line-block">
+<div class="line">Now we are confident that our interpolation works and we can apply it to a FITS file.</div>
+<div class="line">We start wit a 100x100 HI image of NGC6946. For a smoother image, we want to resample the image to get twice as much pixels in both <span class="math notranslate nohighlight">\(x\)</span> and <span class="math notranslate nohighlight">\(y\)</span> by using bilinear interpolation.</div>
+</div>
+<div class="nbinput docutils container">
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[17]:
+</pre></div>
+</div>
+<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="kn">from</span> <span class="nn">astropy.io</span> <span class="kn">import</span> <span class="n">fits</span>
+
+<span class="n">hdulist</span> <span class="o">=</span> <span class="n">fits</span><span class="o">.</span><span class="n">open</span><span class="p">(</span><span class="s1">&#39;pictures/ngc6946.fits&#39;</span><span class="p">)</span>
+<span class="c1"># hdulist.info()</span>
+<span class="n">datIN</span> <span class="o">=</span> <span class="n">hdulist</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span><span class="o">.</span><span class="n">data</span>
+<span class="n">hdulist</span><span class="o">.</span><span class="n">close</span><span class="p">()</span>
+
+<span class="n">rows</span> <span class="o">=</span> <span class="mi">200</span><span class="p">;</span> <span class="n">cols</span> <span class="o">=</span> <span class="mi">200</span>
+<span class="n">datOUT</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">zeros</span><span class="p">((</span><span class="n">rows</span><span class="p">,</span><span class="n">cols</span><span class="p">))</span> <span class="o">*</span> <span class="n">np</span><span class="o">.</span><span class="n">nan</span>
+<span class="n">Y</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">linspace</span><span class="p">(</span><span class="mi">0</span><span class="p">,</span> <span class="n">datIN</span><span class="o">.</span><span class="n">shape</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span><span class="o">-</span><span class="mi">1</span><span class="p">,</span> <span class="n">rows</span><span class="p">)</span>
+<span class="n">X</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">linspace</span><span class="p">(</span><span class="mi">0</span><span class="p">,</span> <span class="n">datIN</span><span class="o">.</span><span class="n">shape</span><span class="p">[</span><span class="mi">1</span><span class="p">]</span><span class="o">-</span><span class="mi">1</span><span class="p">,</span> <span class="n">cols</span><span class="p">)</span>
+
+<span class="k">for</span> <span class="n">i</span><span class="p">,</span><span class="n">Yip</span> <span class="ow">in</span> <span class="nb">enumerate</span><span class="p">(</span><span class="n">Y</span><span class="p">):</span>
+    <span class="k">for</span> <span class="n">j</span><span class="p">,</span><span class="n">Xip</span> <span class="ow">in</span> <span class="nb">enumerate</span><span class="p">(</span><span class="n">X</span><span class="p">):</span>
+        <span class="n">datOUT</span><span class="p">[</span><span class="n">i</span><span class="p">,</span><span class="n">j</span><span class="p">]</span> <span class="o">=</span> <span class="n">bilinearIP</span><span class="p">(</span><span class="n">datIN</span><span class="p">,</span> <span class="n">Xip</span><span class="p">,</span> <span class="n">Yip</span><span class="p">)</span>
+
+<span class="n">fig</span> <span class="o">=</span> <span class="n">figure</span><span class="p">(</span><span class="n">figsize</span><span class="o">=</span><span class="p">(</span><span class="mi">9</span><span class="p">,</span><span class="mi">9</span><span class="p">))</span>
+<span class="n">frame1</span> <span class="o">=</span> <span class="n">fig</span><span class="o">.</span><span class="n">add_subplot</span><span class="p">(</span><span class="mi">1</span><span class="p">,</span><span class="mi">2</span><span class="p">,</span><span class="mi">1</span><span class="p">)</span>
+<span class="n">frame2</span> <span class="o">=</span> <span class="n">fig</span><span class="o">.</span><span class="n">add_subplot</span><span class="p">(</span><span class="mi">1</span><span class="p">,</span><span class="mi">2</span><span class="p">,</span><span class="mi">2</span><span class="p">)</span>
+<span class="n">im1</span> <span class="o">=</span> <span class="n">frame1</span><span class="o">.</span><span class="n">imshow</span><span class="p">(</span><span class="n">datIN</span><span class="p">,</span> <span class="n">interpolation</span><span class="o">=</span><span class="s1">&#39;none&#39;</span><span class="p">,</span> <span class="n">origin</span><span class="o">=</span><span class="s2">&quot;lower&quot;</span><span class="p">,</span> <span class="n">cmap</span><span class="o">=</span><span class="s1">&#39;jet&#39;</span><span class="p">)</span>
+<span class="n">im2</span> <span class="o">=</span> <span class="n">frame2</span><span class="o">.</span><span class="n">imshow</span><span class="p">(</span><span class="n">datOUT</span><span class="p">,</span> <span class="n">interpolation</span><span class="o">=</span><span class="s1">&#39;none&#39;</span><span class="p">,</span> <span class="n">origin</span><span class="o">=</span><span class="s2">&quot;lower&quot;</span><span class="p">,</span> <span class="n">cmap</span><span class="o">=</span><span class="s1">&#39;jet&#39;</span><span class="p">)</span>
+
+<span class="n">show</span><span class="p">()</span>
+</pre></div>
+</div>
+</div>
+<div class="nboutput nblast docutils container">
+<div class="prompt empty docutils container">
+</div>
+<div class="output_area docutils container">
+<img alt="../_images/Notebooks_bilinearinterpol_34_0.png" src="../_images/Notebooks_bilinearinterpol_34_0.png" />
+</div>
+</div>
+</section>
+<section id="Rotating-an-image-using-bilinear-interpolation">
+<h3><span class="section-number">32.3.2. </span>Rotating an image using bilinear interpolation<a class="headerlink" href="#Rotating-an-image-using-bilinear-interpolation" title="Link to this heading">¶</a></h3>
+<p>Important for image processing</p>
+<div class="line-block">
+<div class="line">For regridding an rotation, the algorithm is to start sampling your (yet non existing) output image. Every pixel position in that image is rotated <strong>clockwise</strong> to get a position that corresponds to a position in the input image. Usually this will not be a grid point in this image so we have to interpolate to get a pixel value at that position. Then we store this pixel value in the output image at the grid position we started with.</div>
+<div class="line">The result is that we nicely cover the entire output image and effectively we rotated the input <strong>counter clockwise</strong>.</div>
+</div>
+<div class="nbinput docutils container">
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[18]:
+</pre></div>
+</div>
+<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="kn">from</span> <span class="nn">astropy.io</span> <span class="kn">import</span> <span class="n">fits</span>
+
+<span class="n">hdulist</span> <span class="o">=</span> <span class="n">fits</span><span class="o">.</span><span class="n">open</span><span class="p">(</span><span class="s1">&#39;pictures/ngc6946.fits&#39;</span><span class="p">)</span>
+<span class="c1"># hdulist.info()</span>
+<span class="n">datIN</span> <span class="o">=</span> <span class="n">hdulist</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span><span class="o">.</span><span class="n">data</span>
+<span class="n">hdulist</span><span class="o">.</span><span class="n">close</span><span class="p">()</span>
+
+<span class="n">X0</span> <span class="o">=</span> <span class="n">Y0</span> <span class="o">=</span> <span class="mi">50</span>
+<span class="n">alpha</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">radians</span><span class="p">(</span><span class="mi">30</span><span class="p">)</span>
+
+<span class="n">datOUT</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">zeros_like</span><span class="p">(</span><span class="n">datIN</span><span class="p">)</span><span class="o">*</span><span class="n">np</span><span class="o">.</span><span class="n">nan</span>
+<span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="n">datOUT</span><span class="o">.</span><span class="n">shape</span><span class="p">[</span><span class="mi">0</span><span class="p">]):</span>
+    <span class="k">for</span> <span class="n">j</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="n">datOUT</span><span class="o">.</span><span class="n">shape</span><span class="p">[</span><span class="mi">1</span><span class="p">]):</span>
+        <span class="c1"># We need to rotate clockwise to find this position</span>
+        <span class="c1"># in the unrotated image!</span>
+        <span class="n">Xip</span> <span class="o">=</span>  <span class="n">np</span><span class="o">.</span><span class="n">cos</span><span class="p">(</span><span class="n">alpha</span><span class="p">)</span><span class="o">*</span><span class="p">(</span><span class="n">j</span><span class="o">-</span><span class="n">X0</span><span class="p">)</span> <span class="o">+</span> <span class="n">np</span><span class="o">.</span><span class="n">sin</span><span class="p">(</span><span class="n">alpha</span><span class="p">)</span><span class="o">*</span><span class="p">(</span><span class="n">i</span><span class="o">-</span><span class="n">Y0</span><span class="p">)</span>
+        <span class="n">Yip</span> <span class="o">=</span> <span class="o">-</span><span class="n">np</span><span class="o">.</span><span class="n">sin</span><span class="p">(</span><span class="n">alpha</span><span class="p">)</span><span class="o">*</span><span class="p">(</span><span class="n">j</span><span class="o">-</span><span class="n">X0</span><span class="p">)</span> <span class="o">+</span> <span class="n">np</span><span class="o">.</span><span class="n">cos</span><span class="p">(</span><span class="n">alpha</span><span class="p">)</span><span class="o">*</span><span class="p">(</span><span class="n">i</span><span class="o">-</span><span class="n">Y0</span><span class="p">)</span>
+        <span class="n">Xip</span> <span class="o">+=</span> <span class="n">X0</span> <span class="p">;</span> <span class="n">Yip</span> <span class="o">+=</span> <span class="n">Y0</span>
+        <span class="n">datOUT</span><span class="p">[</span><span class="n">i</span><span class="p">,</span><span class="n">j</span><span class="p">]</span> <span class="o">=</span> <span class="n">bilinearIP</span><span class="p">(</span><span class="n">datIN</span><span class="p">,</span> <span class="n">Xip</span><span class="p">,</span> <span class="n">Yip</span><span class="p">)</span>
+
+<span class="n">fig</span> <span class="o">=</span> <span class="n">figure</span><span class="p">(</span><span class="n">figsize</span><span class="o">=</span><span class="p">(</span><span class="mi">9</span><span class="p">,</span><span class="mi">9</span><span class="p">))</span>
+<span class="n">frame1</span> <span class="o">=</span> <span class="n">fig</span><span class="o">.</span><span class="n">add_subplot</span><span class="p">(</span><span class="mi">1</span><span class="p">,</span><span class="mi">2</span><span class="p">,</span><span class="mi">1</span><span class="p">)</span>
+<span class="n">frame2</span> <span class="o">=</span> <span class="n">fig</span><span class="o">.</span><span class="n">add_subplot</span><span class="p">(</span><span class="mi">1</span><span class="p">,</span><span class="mi">2</span><span class="p">,</span><span class="mi">2</span><span class="p">)</span>
+<span class="n">im1</span> <span class="o">=</span> <span class="n">frame1</span><span class="o">.</span><span class="n">imshow</span><span class="p">(</span><span class="n">datIN</span><span class="p">,</span> <span class="n">interpolation</span><span class="o">=</span><span class="s1">&#39;none&#39;</span><span class="p">,</span> <span class="n">origin</span><span class="o">=</span><span class="s2">&quot;lower&quot;</span><span class="p">,</span> <span class="n">cmap</span><span class="o">=</span><span class="s1">&#39;jet&#39;</span><span class="p">)</span>
+<span class="n">im2</span> <span class="o">=</span> <span class="n">frame2</span><span class="o">.</span><span class="n">imshow</span><span class="p">(</span><span class="n">datOUT</span><span class="p">,</span> <span class="n">interpolation</span><span class="o">=</span><span class="s1">&#39;none&#39;</span><span class="p">,</span> <span class="n">origin</span><span class="o">=</span><span class="s2">&quot;lower&quot;</span><span class="p">,</span> <span class="n">cmap</span><span class="o">=</span><span class="s1">&#39;jet&#39;</span><span class="p">)</span>
+
+<span class="n">show</span><span class="p">()</span>
+</pre></div>
+</div>
+</div>
+<div class="nboutput nblast docutils container">
+<div class="prompt empty docutils container">
+</div>
+<div class="output_area docutils container">
+<img alt="../_images/Notebooks_bilinearinterpol_36_0.png" src="../_images/Notebooks_bilinearinterpol_36_0.png" />
+</div>
+</div>
+</section>
+<section id="Speeding-up-the-rotation">
+<h3><span class="section-number">32.3.3. </span>Speeding up the rotation<a class="headerlink" href="#Speeding-up-the-rotation" title="Link to this heading">¶</a></h3>
+<p>We developed code to apply bilinear interpolation to properly rotate an image. Now it’s time to explore some options to speedup the execution. First we identify that the positions for the rotation can be calculated in a vectorized way using NumPy arrays:</p>
+<div class="nbinput nblast docutils container">
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[19]:
+</pre></div>
+</div>
+<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="n">xg</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">arange</span><span class="p">(</span><span class="mi">0</span><span class="p">,</span> <span class="n">datIN</span><span class="o">.</span><span class="n">shape</span><span class="p">[</span><span class="mi">1</span><span class="p">])</span>
+<span class="n">yg</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">arange</span><span class="p">(</span><span class="mi">0</span><span class="p">,</span> <span class="n">datIN</span><span class="o">.</span><span class="n">shape</span><span class="p">[</span><span class="mi">0</span><span class="p">])</span>
+
+<span class="n">M</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">meshgrid</span><span class="p">(</span><span class="n">xg</span><span class="p">,</span> <span class="n">yg</span><span class="p">)</span>
+<span class="n">X</span><span class="p">,</span> <span class="n">Y</span> <span class="o">=</span> <span class="n">M</span>
+<span class="n">X0</span> <span class="o">=</span> <span class="n">Y0</span> <span class="o">=</span> <span class="mi">50</span>
+<span class="n">alpha</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">radians</span><span class="p">(</span><span class="mi">30</span><span class="p">)</span>
+
+<span class="n">Xr</span> <span class="o">=</span>  <span class="n">np</span><span class="o">.</span><span class="n">cos</span><span class="p">(</span><span class="n">alpha</span><span class="p">)</span><span class="o">*</span><span class="p">(</span><span class="n">X</span><span class="o">-</span><span class="n">X0</span><span class="p">)</span> <span class="o">+</span> <span class="n">np</span><span class="o">.</span><span class="n">sin</span><span class="p">(</span><span class="n">alpha</span><span class="p">)</span><span class="o">*</span><span class="p">(</span><span class="n">Y</span><span class="o">-</span><span class="n">Y0</span><span class="p">)</span>  <span class="c1"># &quot;clockwise&quot;</span>
+<span class="n">Yr</span> <span class="o">=</span> <span class="o">-</span><span class="n">np</span><span class="o">.</span><span class="n">sin</span><span class="p">(</span><span class="n">alpha</span><span class="p">)</span><span class="o">*</span><span class="p">(</span><span class="n">X</span><span class="o">-</span><span class="n">X0</span><span class="p">)</span> <span class="o">+</span> <span class="n">np</span><span class="o">.</span><span class="n">cos</span><span class="p">(</span><span class="n">alpha</span><span class="p">)</span><span class="o">*</span><span class="p">(</span><span class="n">Y</span><span class="o">-</span><span class="n">Y0</span><span class="p">)</span>
+<span class="n">Xr</span> <span class="o">+=</span> <span class="n">X0</span>
+<span class="n">Yr</span> <span class="o">+=</span> <span class="n">Y0</span>
+
+<span class="n">Xr</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">(</span><span class="n">Xr</span><span class="p">)</span><span class="o">.</span><span class="n">reshape</span><span class="p">(</span><span class="n">datIN</span><span class="o">.</span><span class="n">shape</span><span class="p">)</span>
+<span class="n">Yr</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">(</span><span class="n">Yr</span><span class="p">)</span><span class="o">.</span><span class="n">reshape</span><span class="p">(</span><span class="n">datIN</span><span class="o">.</span><span class="n">shape</span><span class="p">)</span>
+</pre></div>
+</div>
+</div>
+<div class="nbinput docutils container">
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[20]:
+</pre></div>
+</div>
+<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="n">datOUT</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">zeros_like</span><span class="p">(</span><span class="n">datIN</span><span class="p">)</span><span class="o">*</span><span class="n">np</span><span class="o">.</span><span class="n">nan</span>
+<span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="n">datOUT</span><span class="o">.</span><span class="n">shape</span><span class="p">[</span><span class="mi">0</span><span class="p">]):</span>
+    <span class="k">for</span> <span class="n">j</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="n">datOUT</span><span class="o">.</span><span class="n">shape</span><span class="p">[</span><span class="mi">1</span><span class="p">]):</span>
+        <span class="n">Xip</span> <span class="o">=</span> <span class="n">Xr</span><span class="p">[</span><span class="n">i</span><span class="p">,</span><span class="n">j</span><span class="p">]</span>
+        <span class="n">Yip</span> <span class="o">=</span> <span class="n">Yr</span><span class="p">[</span><span class="n">i</span><span class="p">,</span><span class="n">j</span><span class="p">]</span>
+        <span class="n">datOUT</span><span class="p">[</span><span class="n">i</span><span class="p">,</span><span class="n">j</span><span class="p">]</span> <span class="o">=</span> <span class="n">bilinearIP</span><span class="p">(</span><span class="n">datIN</span><span class="p">,</span> <span class="n">Xip</span><span class="p">,</span> <span class="n">Yip</span><span class="p">)</span>
+
+
+<span class="n">fig</span> <span class="o">=</span> <span class="n">figure</span><span class="p">(</span><span class="n">figsize</span><span class="o">=</span><span class="p">(</span><span class="mi">9</span><span class="p">,</span><span class="mi">9</span><span class="p">))</span>
+<span class="n">frame1</span> <span class="o">=</span> <span class="n">fig</span><span class="o">.</span><span class="n">add_subplot</span><span class="p">(</span><span class="mi">1</span><span class="p">,</span><span class="mi">2</span><span class="p">,</span><span class="mi">1</span><span class="p">)</span>
+<span class="n">frame2</span> <span class="o">=</span> <span class="n">fig</span><span class="o">.</span><span class="n">add_subplot</span><span class="p">(</span><span class="mi">1</span><span class="p">,</span><span class="mi">2</span><span class="p">,</span><span class="mi">2</span><span class="p">)</span>
+<span class="n">im1</span> <span class="o">=</span> <span class="n">frame1</span><span class="o">.</span><span class="n">imshow</span><span class="p">(</span><span class="n">datIN</span><span class="p">,</span> <span class="n">interpolation</span><span class="o">=</span><span class="s1">&#39;none&#39;</span><span class="p">,</span> <span class="n">origin</span><span class="o">=</span><span class="s2">&quot;lower&quot;</span><span class="p">,</span> <span class="n">cmap</span><span class="o">=</span><span class="s1">&#39;jet&#39;</span><span class="p">)</span>
+<span class="n">im2</span> <span class="o">=</span> <span class="n">frame2</span><span class="o">.</span><span class="n">imshow</span><span class="p">(</span><span class="n">datOUT</span><span class="p">,</span> <span class="n">interpolation</span><span class="o">=</span><span class="s1">&#39;none&#39;</span><span class="p">,</span> <span class="n">origin</span><span class="o">=</span><span class="s2">&quot;lower&quot;</span><span class="p">,</span> <span class="n">cmap</span><span class="o">=</span><span class="s1">&#39;jet&#39;</span><span class="p">)</span>
+
+<span class="n">show</span><span class="p">()</span>
+</pre></div>
+</div>
+</div>
+<div class="nboutput nblast docutils container">
+<div class="prompt empty docutils container">
+</div>
+<div class="output_area docutils container">
+<img alt="../_images/Notebooks_bilinearinterpol_39_0.png" src="../_images/Notebooks_bilinearinterpol_39_0.png" />
+</div>
+</div>
+</section>
+<section id="Speeding-up-with-numpy.ndindex-by-avoiding-an-inner-loop">
+<h3><span class="section-number">32.3.4. </span>Speeding up with <code class="docutils literal notranslate"><span class="pre">numpy.ndindex</span></code> by avoiding an inner loop<a class="headerlink" href="#Speeding-up-with-numpy.ndindex-by-avoiding-an-inner-loop" title="Link to this heading">¶</a></h3>
+<p>Nested loops are an important cause of long execution times. We can avoid the inner loop in the previous example by generating our indices with function <code class="docutils literal notranslate"><span class="pre">numpy.ndindex()</span></code>. This function has one argument and that is the shape of the data structure for which we want to find the indices. If we know the dimension beforehand, we can unpack the indices from the generated tuples which contain the indices.</p>
+<p>We applied this function in the example below:</p>
+<div class="nbinput docutils container">
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[21]:
+</pre></div>
+</div>
+<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="n">datOUT</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">zeros_like</span><span class="p">(</span><span class="n">datIN</span><span class="p">)</span><span class="o">*</span><span class="n">np</span><span class="o">.</span><span class="n">nan</span>
+<span class="k">for</span> <span class="n">i</span><span class="p">,</span><span class="n">j</span> <span class="ow">in</span> <span class="n">np</span><span class="o">.</span><span class="n">ndindex</span><span class="p">(</span><span class="n">datOUT</span><span class="o">.</span><span class="n">shape</span><span class="p">):</span>
+    <span class="n">Xip</span> <span class="o">=</span> <span class="n">Xr</span><span class="p">[</span><span class="n">i</span><span class="p">,</span><span class="n">j</span><span class="p">]</span>
+    <span class="n">Yip</span> <span class="o">=</span> <span class="n">Yr</span><span class="p">[</span><span class="n">i</span><span class="p">,</span><span class="n">j</span><span class="p">]</span>
+    <span class="n">datOUT</span><span class="p">[</span><span class="n">i</span><span class="p">,</span><span class="n">j</span><span class="p">]</span> <span class="o">=</span> <span class="n">bilinearIP</span><span class="p">(</span><span class="n">datIN</span><span class="p">,</span> <span class="n">Xip</span><span class="p">,</span> <span class="n">Yip</span><span class="p">)</span>
+
+
+<span class="n">fig</span> <span class="o">=</span> <span class="n">figure</span><span class="p">(</span><span class="n">figsize</span><span class="o">=</span><span class="p">(</span><span class="mi">9</span><span class="p">,</span><span class="mi">9</span><span class="p">))</span>
+<span class="n">frame1</span> <span class="o">=</span> <span class="n">fig</span><span class="o">.</span><span class="n">add_subplot</span><span class="p">(</span><span class="mi">1</span><span class="p">,</span><span class="mi">2</span><span class="p">,</span><span class="mi">1</span><span class="p">)</span>
+<span class="n">frame2</span> <span class="o">=</span> <span class="n">fig</span><span class="o">.</span><span class="n">add_subplot</span><span class="p">(</span><span class="mi">1</span><span class="p">,</span><span class="mi">2</span><span class="p">,</span><span class="mi">2</span><span class="p">)</span>
+<span class="n">im1</span> <span class="o">=</span> <span class="n">frame1</span><span class="o">.</span><span class="n">imshow</span><span class="p">(</span><span class="n">datIN</span><span class="p">,</span> <span class="n">interpolation</span><span class="o">=</span><span class="s1">&#39;none&#39;</span><span class="p">,</span> <span class="n">origin</span><span class="o">=</span><span class="s2">&quot;lower&quot;</span><span class="p">,</span> <span class="n">cmap</span><span class="o">=</span><span class="s1">&#39;jet&#39;</span><span class="p">)</span>
+<span class="n">im2</span> <span class="o">=</span> <span class="n">frame2</span><span class="o">.</span><span class="n">imshow</span><span class="p">(</span><span class="n">datOUT</span><span class="p">,</span> <span class="n">interpolation</span><span class="o">=</span><span class="s1">&#39;none&#39;</span><span class="p">,</span> <span class="n">origin</span><span class="o">=</span><span class="s2">&quot;lower&quot;</span><span class="p">,</span> <span class="n">cmap</span><span class="o">=</span><span class="s1">&#39;jet&#39;</span><span class="p">)</span>
+
+<span class="n">show</span><span class="p">()</span>
+</pre></div>
+</div>
+</div>
+<div class="nboutput nblast docutils container">
+<div class="prompt empty docutils container">
+</div>
+<div class="output_area docutils container">
+<img alt="../_images/Notebooks_bilinearinterpol_41_0.png" src="../_images/Notebooks_bilinearinterpol_41_0.png" />
+</div>
+</div>
+</section>
+<section id="Avoiding-cutoffs">
+<h3><span class="section-number">32.3.5. </span>Avoiding cutoffs<a class="headerlink" href="#Avoiding-cutoffs" title="Link to this heading">¶</a></h3>
+<p>To get the rotated image without cutoffs, one should start with an output image which is bigger so that we don’t miss pixels from the input image.</p>
+<p>We scale the output image with some factor. Then we shift positions so that they are relative to a new rotation center (e.g. the center of the image). The we apply rotation to the positions, but we have to shift them to become relative to position (0,0) in the input. However this shift is different compared to the previous because we are shifting in the original image now.</p>
+<p>First repeat the definition of our function <code class="docutils literal notranslate"><span class="pre">bilinearIP()</span></code> and then we write some lines to calculate what the new axis lengths will be so that we can calculate a grid that contains the entire image. We do this by rotating the corners of the input image and calculates the new axis length in <span class="math notranslate nohighlight">\(x\)</span> and <span class="math notranslate nohighlight">\(y\)</span>.</p>
+<section id="The-bilinear-interpolation-function-bilinearIP">
+<h4><span class="section-number">32.3.5.1. </span>The bilinear interpolation function <code class="docutils literal notranslate"><span class="pre">bilinearIP</span></code><a class="headerlink" href="#The-bilinear-interpolation-function-bilinearIP" title="Link to this heading">¶</a></h4>
+<p>We use our previously defined function <code class="docutils literal notranslate"><span class="pre">bilinearIP()</span></code>from this notebook.</p>
+</section>
+<section id="Read-the-input-data">
+<h4><span class="section-number">32.3.5.2. </span>Read the input data<a class="headerlink" href="#Read-the-input-data" title="Link to this heading">¶</a></h4>
+<div class="nbinput nblast docutils container">
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[22]:
+</pre></div>
+</div>
+<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="n">hdulist</span> <span class="o">=</span> <span class="n">fits</span><span class="o">.</span><span class="n">open</span><span class="p">(</span><span class="s1">&#39;pictures/ngc6946.fits&#39;</span><span class="p">)</span>
+<span class="c1"># hdulist.info()</span>
+<span class="n">datIN</span> <span class="o">=</span> <span class="n">hdulist</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span><span class="o">.</span><span class="n">data</span>
+<span class="n">hdulist</span><span class="o">.</span><span class="n">close</span><span class="p">()</span>
+</pre></div>
+</div>
+</div>
+</section>
+<section id="Calculating-a-new-box-by-rotating-the-limits-of-the-input-data">
+<h4><span class="section-number">32.3.5.3. </span>Calculating a new box by rotating the limits of the input data<a class="headerlink" href="#Calculating-a-new-box-by-rotating-the-limits-of-the-input-data" title="Link to this heading">¶</a></h4>
+<div class="nbinput nblast docutils container">
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[23]:
+</pre></div>
+</div>
+<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="n">alpha</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">radians</span><span class="p">(</span><span class="mi">30</span><span class="p">)</span>        <span class="c1"># Rotate image alpha radians counter clockwise</span>
+<span class="n">leny</span> <span class="o">=</span> <span class="n">datIN</span><span class="o">.</span><span class="n">shape</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span>
+<span class="n">lenx</span> <span class="o">=</span> <span class="n">datIN</span><span class="o">.</span><span class="n">shape</span><span class="p">[</span><span class="mi">1</span><span class="p">]</span>
+
+<span class="c1"># Put rotation center in the middle of the image</span>
+<span class="n">X0in</span> <span class="o">=</span> <span class="n">lenx</span><span class="o">//</span><span class="mi">2</span>
+<span class="n">Y0in</span> <span class="o">=</span> <span class="n">leny</span><span class="o">//</span><span class="mi">2</span>
+<span class="c1"># Rotate the coordinates (0,leny) and (lenx,0)</span>
+<span class="n">lenx1</span> <span class="o">=</span> <span class="mi">0</span><span class="o">*</span><span class="n">np</span><span class="o">.</span><span class="n">cos</span><span class="p">(</span><span class="n">alpha</span><span class="p">)</span> <span class="o">-</span> <span class="n">leny</span><span class="o">*</span><span class="n">np</span><span class="o">.</span><span class="n">sin</span><span class="p">(</span><span class="n">alpha</span><span class="p">)</span>
+<span class="n">leny1</span> <span class="o">=</span> <span class="mi">0</span><span class="o">*</span><span class="n">np</span><span class="o">.</span><span class="n">sin</span><span class="p">(</span><span class="n">alpha</span><span class="p">)</span> <span class="o">+</span> <span class="n">leny</span><span class="o">*</span><span class="n">np</span><span class="o">.</span><span class="n">cos</span><span class="p">(</span><span class="n">alpha</span><span class="p">)</span>
+<span class="n">lenx2</span> <span class="o">=</span> <span class="n">lenx</span> <span class="o">*</span> <span class="n">np</span><span class="o">.</span><span class="n">cos</span><span class="p">(</span><span class="n">alpha</span><span class="p">)</span> <span class="o">-</span> <span class="mi">0</span><span class="o">*</span><span class="n">np</span><span class="o">.</span><span class="n">sin</span><span class="p">(</span><span class="n">alpha</span><span class="p">)</span>
+<span class="n">leny2</span> <span class="o">=</span> <span class="n">lenx</span> <span class="o">*</span> <span class="n">np</span><span class="o">.</span><span class="n">sin</span><span class="p">(</span><span class="n">alpha</span><span class="p">)</span> <span class="o">+</span> <span class="mi">0</span><span class="o">*</span><span class="n">np</span><span class="o">.</span><span class="n">cos</span><span class="p">(</span><span class="n">alpha</span><span class="p">)</span>
+<span class="c1"># Add the absolute value of negative coordinates</span>
+<span class="n">newlenx</span> <span class="o">=</span> <span class="nb">int</span><span class="p">(</span><span class="nb">abs</span><span class="p">(</span><span class="n">lenx1</span><span class="p">)</span> <span class="o">+</span> <span class="nb">abs</span><span class="p">(</span><span class="n">lenx2</span><span class="p">))</span>
+<span class="n">newleny</span> <span class="o">=</span> <span class="nb">int</span><span class="p">(</span><span class="nb">abs</span><span class="p">(</span><span class="n">leny1</span><span class="p">)</span> <span class="o">+</span> <span class="nb">abs</span><span class="p">(</span><span class="n">leny2</span><span class="p">))</span>
+</pre></div>
+</div>
+</div>
+</section>
+<section id="Use-the-new-limits-to-sample-the-output-image">
+<h4><span class="section-number">32.3.5.4. </span>Use the new limits to sample the output image<a class="headerlink" href="#Use-the-new-limits-to-sample-the-output-image" title="Link to this heading">¶</a></h4>
+<div class="nbinput docutils container">
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[24]:
+</pre></div>
+</div>
+<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="n">leny</span> <span class="o">=</span> <span class="n">datIN</span><span class="o">.</span><span class="n">shape</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span>
+<span class="n">lenx</span> <span class="o">=</span> <span class="n">datIN</span><span class="o">.</span><span class="n">shape</span><span class="p">[</span><span class="mi">1</span><span class="p">]</span>
+
+<span class="n">xg</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">arange</span><span class="p">(</span><span class="mi">0</span><span class="p">,</span> <span class="n">newlenx</span><span class="p">)</span>
+<span class="n">yg</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">arange</span><span class="p">(</span><span class="mi">0</span><span class="p">,</span> <span class="n">newleny</span><span class="p">)</span>
+
+<span class="n">M</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">meshgrid</span><span class="p">(</span><span class="n">xg</span><span class="p">,</span> <span class="n">yg</span><span class="p">)</span>
+<span class="n">X</span><span class="p">,</span> <span class="n">Y</span> <span class="o">=</span> <span class="n">M</span>
+<span class="c1"># Rotation center in output image</span>
+<span class="n">X0out</span> <span class="o">=</span> <span class="n">newlenx</span><span class="o">//</span><span class="mi">2</span>   <span class="c1">#int(X0in*scaleX)</span>
+<span class="n">Y0out</span> <span class="o">=</span> <span class="n">newleny</span><span class="o">//</span><span class="mi">2</span>   <span class="c1">#int(Y0in*scaleY)</span>
+
+<span class="c1"># Rotate all positions (tuples) in our meshgrid</span>
+<span class="n">Xr</span> <span class="o">=</span>  <span class="p">(</span><span class="n">X</span><span class="o">-</span><span class="n">X0out</span><span class="p">)</span><span class="o">*</span><span class="n">np</span><span class="o">.</span><span class="n">cos</span><span class="p">(</span><span class="n">alpha</span><span class="p">)</span> <span class="o">+</span> <span class="p">(</span><span class="n">Y</span><span class="o">-</span><span class="n">Y0out</span><span class="p">)</span><span class="o">*</span><span class="n">np</span><span class="o">.</span><span class="n">sin</span><span class="p">(</span><span class="n">alpha</span><span class="p">)</span>  <span class="c1"># &quot;clockwise&quot;</span>
+<span class="n">Yr</span> <span class="o">=</span> <span class="o">-</span><span class="p">(</span><span class="n">X</span><span class="o">-</span><span class="n">X0out</span><span class="p">)</span><span class="o">*</span><span class="n">np</span><span class="o">.</span><span class="n">sin</span><span class="p">(</span><span class="n">alpha</span><span class="p">)</span> <span class="o">+</span> <span class="p">(</span><span class="n">Y</span><span class="o">-</span><span class="n">Y0out</span><span class="p">)</span><span class="o">*</span><span class="n">np</span><span class="o">.</span><span class="n">cos</span><span class="p">(</span><span class="n">alpha</span><span class="p">)</span>
+<span class="n">Xr</span> <span class="o">+=</span> <span class="n">X0in</span>
+<span class="n">Yr</span> <span class="o">+=</span> <span class="n">Y0in</span>
+
+<span class="n">newshape</span> <span class="o">=</span> <span class="p">(</span><span class="n">newleny</span><span class="p">,</span> <span class="n">newlenx</span><span class="p">)</span>
+<span class="n">Xr</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">(</span><span class="n">Xr</span><span class="p">)</span><span class="o">.</span><span class="n">reshape</span><span class="p">(</span><span class="n">newshape</span><span class="p">)</span>
+<span class="n">Yr</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">(</span><span class="n">Yr</span><span class="p">)</span><span class="o">.</span><span class="n">reshape</span><span class="p">(</span><span class="n">newshape</span><span class="p">)</span>
+
+<span class="c1"># Create a new data structure with the new shape and fill with NaN&#39;s</span>
+<span class="n">datOUT</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">full</span><span class="p">(</span><span class="n">newshape</span><span class="p">,</span> <span class="n">np</span><span class="o">.</span><span class="n">nan</span><span class="p">)</span>
+
+<span class="c1"># Loop over all coordinate pairs and find interpolated intensity</span>
+<span class="k">for</span> <span class="n">i</span><span class="p">,</span><span class="n">j</span> <span class="ow">in</span> <span class="n">np</span><span class="o">.</span><span class="n">ndindex</span><span class="p">(</span><span class="n">datOUT</span><span class="o">.</span><span class="n">shape</span><span class="p">):</span>
+    <span class="n">Xip</span> <span class="o">=</span> <span class="n">Xr</span><span class="p">[</span><span class="n">i</span><span class="p">,</span><span class="n">j</span><span class="p">]</span>
+    <span class="n">Yip</span> <span class="o">=</span> <span class="n">Yr</span><span class="p">[</span><span class="n">i</span><span class="p">,</span><span class="n">j</span><span class="p">]</span>
+    <span class="n">datOUT</span><span class="p">[</span><span class="n">i</span><span class="p">,</span><span class="n">j</span><span class="p">]</span> <span class="o">=</span> <span class="n">bilinearIP</span><span class="p">(</span><span class="n">datIN</span><span class="p">,</span> <span class="n">Xip</span><span class="p">,</span> <span class="n">Yip</span><span class="p">)</span>
+
+<span class="n">fig</span> <span class="o">=</span> <span class="n">figure</span><span class="p">(</span><span class="n">figsize</span><span class="o">=</span><span class="p">(</span><span class="mi">9</span><span class="p">,</span><span class="mi">9</span><span class="p">))</span>
+<span class="n">frame1</span> <span class="o">=</span> <span class="n">fig</span><span class="o">.</span><span class="n">add_subplot</span><span class="p">(</span><span class="mi">1</span><span class="p">,</span><span class="mi">2</span><span class="p">,</span><span class="mi">1</span><span class="p">)</span>
+<span class="n">frame2</span> <span class="o">=</span> <span class="n">fig</span><span class="o">.</span><span class="n">add_subplot</span><span class="p">(</span><span class="mi">1</span><span class="p">,</span><span class="mi">2</span><span class="p">,</span><span class="mi">2</span><span class="p">)</span>
+<span class="n">im1</span> <span class="o">=</span> <span class="n">frame1</span><span class="o">.</span><span class="n">imshow</span><span class="p">(</span><span class="n">datIN</span><span class="p">,</span> <span class="n">interpolation</span><span class="o">=</span><span class="s1">&#39;none&#39;</span><span class="p">,</span> <span class="n">origin</span><span class="o">=</span><span class="s2">&quot;lower&quot;</span><span class="p">,</span> <span class="n">cmap</span><span class="o">=</span><span class="s1">&#39;jet&#39;</span><span class="p">)</span>
+<span class="n">im2</span> <span class="o">=</span> <span class="n">frame2</span><span class="o">.</span><span class="n">imshow</span><span class="p">(</span><span class="n">datOUT</span><span class="p">,</span> <span class="n">interpolation</span><span class="o">=</span><span class="s1">&#39;none&#39;</span><span class="p">,</span> <span class="n">origin</span><span class="o">=</span><span class="s2">&quot;lower&quot;</span><span class="p">,</span> <span class="n">cmap</span><span class="o">=</span><span class="s1">&#39;jet&#39;</span><span class="p">)</span>
+
+<span class="n">show</span><span class="p">()</span>
+</pre></div>
+</div>
+</div>
+<div class="nboutput nblast docutils container">
+<div class="prompt empty docutils container">
+</div>
+<div class="output_area docutils container">
+<img alt="../_images/Notebooks_bilinearinterpol_50_0.png" src="../_images/Notebooks_bilinearinterpol_50_0.png" />
+</div>
+</div>
+</section>
+</section>
+</section>
+<section id="Rotation-routines-from-Python-modules">
+<h2><span class="section-number">32.4. </span>Rotation routines from Python modules<a class="headerlink" href="#Rotation-routines-from-Python-modules" title="Link to this heading">¶</a></h2>
+<p>Several modules provide functions which rotate images. One cannot use <code class="docutils literal notranslate"><span class="pre">interp2d</span></code> because that function interpolates in rectangular non rotated grids.</p>
+<p>Module <code class="docutils literal notranslate"><span class="pre">scipy.ndimage</span></code> provides a routine which does the interpolation with splines. See the example in the next cell.</p>
+<p>This, and some other function for rotating images, are defined for images like JPG’s or PNG’s. There the data is ordered from top to bottom. So we should flip the <span class="math notranslate nohighlight">\(y\)</span> axis in our FITS data first.</p>
+<p>Then there is no need to set <code class="docutils literal notranslate"><span class="pre">origin='lower'</span></code> in Matplotlib’s <code class="docutils literal notranslate"><span class="pre">imshow()</span></code> to display the image correctly.</p>
+<section id="Rotate-with-the-ndimage-module-from-SciPy">
+<h3><span class="section-number">32.4.1. </span>Rotate with the <code class="docutils literal notranslate"><span class="pre">ndimage</span></code> module from SciPy<a class="headerlink" href="#Rotate-with-the-ndimage-module-from-SciPy" title="Link to this heading">¶</a></h3>
+<div class="nbinput docutils container">
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[25]:
+</pre></div>
+</div>
+<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="kn">from</span> <span class="nn">scipy.ndimage</span> <span class="kn">import</span> <span class="n">rotate</span>
+
+<span class="n">alpha</span> <span class="o">=</span> <span class="mi">30</span>   <span class="c1"># Now it is in degrees</span>
+<span class="n">datINflipped</span> <span class="o">=</span> <span class="n">datIN</span><span class="p">[::</span><span class="o">-</span><span class="mi">1</span><span class="p">,:]</span>
+<span class="n">datOUT</span> <span class="o">=</span> <span class="n">rotate</span><span class="p">(</span><span class="n">datINflipped</span><span class="p">,</span> <span class="n">alpha</span><span class="p">,</span> <span class="n">order</span><span class="o">=</span><span class="mi">1</span><span class="p">)</span>
+
+<span class="n">fig</span> <span class="o">=</span> <span class="n">figure</span><span class="p">(</span><span class="n">figsize</span><span class="o">=</span><span class="p">(</span><span class="mi">9</span><span class="p">,</span><span class="mi">9</span><span class="p">))</span>
+<span class="n">frame1</span> <span class="o">=</span> <span class="n">fig</span><span class="o">.</span><span class="n">add_subplot</span><span class="p">(</span><span class="mi">1</span><span class="p">,</span><span class="mi">2</span><span class="p">,</span><span class="mi">1</span><span class="p">)</span>
+<span class="n">frame2</span> <span class="o">=</span> <span class="n">fig</span><span class="o">.</span><span class="n">add_subplot</span><span class="p">(</span><span class="mi">1</span><span class="p">,</span><span class="mi">2</span><span class="p">,</span><span class="mi">2</span><span class="p">)</span>
+<span class="n">im1</span> <span class="o">=</span> <span class="n">frame1</span><span class="o">.</span><span class="n">imshow</span><span class="p">(</span><span class="n">datINflipped</span><span class="p">,</span> <span class="n">interpolation</span><span class="o">=</span><span class="s1">&#39;none&#39;</span><span class="p">,</span> <span class="n">cmap</span><span class="o">=</span><span class="s1">&#39;jet&#39;</span><span class="p">)</span>
+<span class="n">im2</span> <span class="o">=</span> <span class="n">frame2</span><span class="o">.</span><span class="n">imshow</span><span class="p">(</span><span class="n">datOUT</span><span class="p">,</span> <span class="n">interpolation</span><span class="o">=</span><span class="s1">&#39;none&#39;</span><span class="p">,</span> <span class="n">cmap</span><span class="o">=</span><span class="s1">&#39;jet&#39;</span><span class="p">)</span>
+
+<span class="n">show</span><span class="p">()</span>
+</pre></div>
+</div>
+</div>
+<div class="nboutput nblast docutils container">
+<div class="prompt empty docutils container">
+</div>
+<div class="output_area docutils container">
+<img alt="../_images/Notebooks_bilinearinterpol_52_0.png" src="../_images/Notebooks_bilinearinterpol_52_0.png" />
+</div>
+</div>
+</section>
+<section id="Rotation-with-module-Pillow">
+<h3><span class="section-number">32.4.2. </span>Rotation with module Pillow<a class="headerlink" href="#Rotation-with-module-Pillow" title="Link to this heading">¶</a></h3>
+<ul class="simple">
+<li><p>The module is imported with <code class="docutils literal notranslate"><span class="pre">PIL</span></code></p></li>
+<li><p>It has much functionality to process images</p></li>
+<li><p>We read image objects from PNG, JPG etc. or from a NumPy 2D array</p></li>
+<li><p>We create an image object from an array with the <code class="docutils literal notranslate"><span class="pre">PIL.Image.fromarray()</span></code> function</p></li>
+<li><p>An PIL image has a method <code class="docutils literal notranslate"><span class="pre">rotate</span></code></p></li>
+<li><p>This method rotates about the image center over an angle in degrees</p></li>
+<li><p>We create a 2D array from this rotated image with <code class="docutils literal notranslate"><span class="pre">numpy.asarray()</span></code></p></li>
+<li><p>By default, no interpolation will be applied (nearest pixel only)</p></li>
+<li><p>With parameter <code class="docutils literal notranslate"><span class="pre">resample</span></code> we set an interpolatie mode</p></li>
+<li><p>Use parameter <code class="docutils literal notranslate"><span class="pre">expand</span></code> to prevent cutoffs at the edges</p></li>
+<li><p>Information about the Image module can be found at <a class="reference external" href="https://pillow.readthedocs.io/en/3.1.x/reference/Image.html">https://pillow.readthedocs.io/en/3.1.x/reference/Image.html</a></p></li>
+</ul>
+<div class="nbinput docutils container">
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[26]:
+</pre></div>
+</div>
+<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="kn">from</span> <span class="nn">PIL</span> <span class="kn">import</span> <span class="n">Image</span>
+<span class="n">datINflipped</span> <span class="o">=</span> <span class="n">datIN</span><span class="p">[::</span><span class="o">-</span><span class="mi">1</span><span class="p">,:]</span>
+<span class="n">im</span> <span class="o">=</span> <span class="n">Image</span><span class="o">.</span><span class="n">fromarray</span><span class="p">(</span><span class="n">datINflipped</span><span class="p">)</span>
+<span class="n">rotated</span> <span class="o">=</span> <span class="n">im</span><span class="o">.</span><span class="n">rotate</span><span class="p">(</span><span class="mi">30</span><span class="p">,</span> <span class="n">resample</span><span class="o">=</span><span class="n">Image</span><span class="o">.</span><span class="n">BILINEAR</span><span class="p">,</span> <span class="n">expand</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
+<span class="n">datOUT</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">asarray</span><span class="p">(</span><span class="n">rotated</span><span class="p">)</span>
+
+<span class="n">fig</span> <span class="o">=</span> <span class="n">figure</span><span class="p">(</span><span class="n">figsize</span><span class="o">=</span><span class="p">(</span><span class="mi">9</span><span class="p">,</span><span class="mi">9</span><span class="p">))</span>
+<span class="n">frame1</span> <span class="o">=</span> <span class="n">fig</span><span class="o">.</span><span class="n">add_subplot</span><span class="p">(</span><span class="mi">1</span><span class="p">,</span><span class="mi">2</span><span class="p">,</span><span class="mi">1</span><span class="p">)</span>
+<span class="n">frame2</span> <span class="o">=</span> <span class="n">fig</span><span class="o">.</span><span class="n">add_subplot</span><span class="p">(</span><span class="mi">1</span><span class="p">,</span><span class="mi">2</span><span class="p">,</span><span class="mi">2</span><span class="p">)</span>
+<span class="n">im1</span> <span class="o">=</span> <span class="n">frame1</span><span class="o">.</span><span class="n">imshow</span><span class="p">(</span><span class="n">datINflipped</span><span class="p">,</span> <span class="n">interpolation</span><span class="o">=</span><span class="s1">&#39;none&#39;</span><span class="p">,</span> <span class="n">cmap</span><span class="o">=</span><span class="s1">&#39;jet&#39;</span><span class="p">)</span>
+<span class="n">im2</span> <span class="o">=</span> <span class="n">frame2</span><span class="o">.</span><span class="n">imshow</span><span class="p">(</span><span class="n">datOUT</span><span class="p">,</span> <span class="n">interpolation</span><span class="o">=</span><span class="s1">&#39;none&#39;</span><span class="p">,</span> <span class="n">cmap</span><span class="o">=</span><span class="s1">&#39;jet&#39;</span><span class="p">)</span>
+
+<span class="n">show</span><span class="p">()</span>
+</pre></div>
+</div>
+</div>
+<div class="nboutput nblast docutils container">
+<div class="prompt empty docutils container">
+</div>
+<div class="output_area docutils container">
+<img alt="../_images/Notebooks_bilinearinterpol_54_0.png" src="../_images/Notebooks_bilinearinterpol_54_0.png" />
+</div>
+</div>
+</section>
+<section id="Rotate-an-image-with-OpenCV">
+<h3><span class="section-number">32.4.3. </span>Rotate an image with OpenCV<a class="headerlink" href="#Rotate-an-image-with-OpenCV" title="Link to this heading">¶</a></h3>
+<p>OpenCV is a powerful module for image processing. Currently there is not a version available that is compatible with our Anaconda distribution. As soon there is an installable version, we will update this notebook.</p>
+<script type="application/vnd.jupyter.widget-state+json">
+{"state": {"00be52933a8f47cfbcd50c39c7f466da": {"model_module": "@jupyter-widgets/controls", "model_module_version": "1.5.0", "model_name": "VBoxModel", "state": {"_dom_classes": ["widget-interact"], "_model_module_version": "1.5.0", "_view_module_version": "1.5.0", "children": ["IPY_MODEL_f8ba0fbe15ed4eafad8c58a028c3c335", "IPY_MODEL_cfb5f331aa194c1bb5380d9404853543"], "layout": "IPY_MODEL_1dcb7e3e70d74d31a48c78d6a03fcff8"}}, "10853b9c17fd4251a5b9ef2801dae2ec": {"model_module": "@jupyter-widgets/base", "model_module_version": "1.1.0", "model_name": "LayoutModel", "state": {}}, "113330dc24e9437482fc42ca5823b209": {"model_module": "@jupyter-widgets/base", "model_module_version": "1.2.0", "model_name": "LayoutModel", "state": {"_model_module_version": "1.2.0", "_view_module_version": "1.2.0", "justify_items": null, "object_fit": null, "object_position": null}}, "1ad48cc29d7d42768255456b9af3692c": {"model_module": "@jupyter-widgets/controls", "model_module_version": "1.4.0", "model_name": "FloatSliderModel", "state": {"description": "x", "layout": "IPY_MODEL_5633a20264db4780a984d3292e51771b", "max": 1.9999, "step": 0.05, "style": "IPY_MODEL_b702094628fa410cb0d8aaafaf7772df", "value": 1}}, "1dcb7e3e70d74d31a48c78d6a03fcff8": {"model_module": "@jupyter-widgets/base", "model_module_version": "1.2.0", "model_name": "LayoutModel", "state": {"_model_module_version": "1.2.0", "_view_module_version": "1.2.0", "justify_items": null, "object_fit": null, "object_position": null}}, "23749a8eaa0346eca887a3c165a6b055": {"model_module": "@jupyter-widgets/base", "model_module_version": "1.2.0", "model_name": "LayoutModel", "state": {"_model_module_version": "1.2.0", "_view_module_version": "1.2.0", "justify_items": null, "object_fit": null, "object_position": null}}, "380714314e21430484729ec412f2b4f6": {"model_module": "@jupyter-widgets/base", "model_module_version": "1.1.0", "model_name": "LayoutModel", "state": {}}, "5633a20264db4780a984d3292e51771b": {"model_module": "@jupyter-widgets/base", "model_module_version": "1.1.0", "model_name": "LayoutModel", "state": {}}, "5a85d6a20c7e46aeb665d42b7bdba113": {"model_module": "@jupyter-widgets/base", "model_module_version": "1.2.0", "model_name": "LayoutModel", "state": {"_model_module_version": "1.2.0", "_view_module_version": "1.2.0", "justify_items": null, "object_fit": null, "object_position": null}}, "5db8233912cf4ddfafd89098a4e6eb7d": {"model_module": "@jupyter-widgets/controls", "model_module_version": "1.5.0", "model_name": "SliderStyleModel", "state": {"_model_module_version": "1.5.0", "_view_module_version": "1.2.0", "description_width": ""}}, "696ccf5488244a589a8d1b392c940e9f": {"model_module": "@jupyter-widgets/base", "model_module_version": "1.2.0", "model_name": "LayoutModel", "state": {"_model_module_version": "1.2.0", "_view_module_version": "1.2.0", "justify_items": null, "object_fit": null, "object_position": null}}, "6e7ed71a320a498e8f4c7e40c4b54036": {"model_module": "@jupyter-widgets/controls", "model_module_version": "1.5.0", "model_name": "SliderStyleModel", "state": {"_model_module_version": "1.5.0", "_view_module_version": "1.2.0", "description_width": ""}}, "9f0c5c0aac9e474b992df287462b322e": {"model_module": "@jupyter-widgets/controls", "model_module_version": "1.5.0", "model_name": "FloatSliderModel", "state": {"_model_module_version": "1.5.0", "_view_module_version": "1.5.0", "description": "x", "layout": "IPY_MODEL_23749a8eaa0346eca887a3c165a6b055", "max": 2, "step": 0.05, "style": "IPY_MODEL_6e7ed71a320a498e8f4c7e40c4b54036", "value": 1}}, "ad65b865d4b9484da40351d97654f105": {"model_module": "@jupyter-widgets/base", "model_module_version": "1.2.0", "model_name": "LayoutModel", "state": {"_model_module_version": "1.2.0", "_view_module_version": "1.2.0", "justify_items": null, "object_fit": null, "object_position": null}}, "aeee212310524de7a9a4e19f43e62530": {"model_module": "@jupyter-widgets/output", "model_module_version": "1.0.0", "model_name": "OutputModel", "state": {"layout": "IPY_MODEL_113330dc24e9437482fc42ca5823b209", "outputs": [{"name": "stdout", "output_type": "stream", "text": "x= 1.0 \nI= 1100.0\n"}]}}, "b702094628fa410cb0d8aaafaf7772df": {"model_module": "@jupyter-widgets/controls", "model_module_version": "1.4.0", "model_name": "SliderStyleModel", "state": {"description_width": ""}}, "c085f0da0ff8413b9ab3f7bc164169b9": {"model_module": "@jupyter-widgets/controls", "model_module_version": "1.5.0", "model_name": "VBoxModel", "state": {"_dom_classes": ["widget-interact"], "_model_module_version": "1.5.0", "_view_module_version": "1.5.0", "children": ["IPY_MODEL_9f0c5c0aac9e474b992df287462b322e", "IPY_MODEL_aeee212310524de7a9a4e19f43e62530"], "layout": "IPY_MODEL_ad65b865d4b9484da40351d97654f105"}}, "cc2d51b06f5649f19e35bedcd62273ea": {"model_module": "@jupyter-widgets/output", "model_module_version": "1.0.0", "model_name": "OutputModel", "state": {"layout": "IPY_MODEL_10853b9c17fd4251a5b9ef2801dae2ec", "outputs": [{"name": "stdout", "output_type": "stream", "text": "x= 1.0 \nI= 1100.0\n"}]}}, "cfb5f331aa194c1bb5380d9404853543": {"model_module": "@jupyter-widgets/output", "model_module_version": "1.0.0", "model_name": "OutputModel", "state": {"layout": "IPY_MODEL_5a85d6a20c7e46aeb665d42b7bdba113", "outputs": [{"name": "stdout", "output_type": "stream", "text": "Xip= 1.0 \nIip= 1100.0\n"}]}}, "d2ef158904b64b92b71da6939e68917f": {"model_module": "@jupyter-widgets/controls", "model_module_version": "1.4.0", "model_name": "VBoxModel", "state": {"_dom_classes": ["widget-interact"], "children": ["IPY_MODEL_1ad48cc29d7d42768255456b9af3692c", "IPY_MODEL_cc2d51b06f5649f19e35bedcd62273ea"], "layout": "IPY_MODEL_380714314e21430484729ec412f2b4f6"}}, "f8ba0fbe15ed4eafad8c58a028c3c335": {"model_module": "@jupyter-widgets/controls", "model_module_version": "1.5.0", "model_name": "FloatSliderModel", "state": {"_model_module_version": "1.5.0", "_view_module_version": "1.5.0", "description": "Xip", "layout": "IPY_MODEL_696ccf5488244a589a8d1b392c940e9f", "max": 1.9999, "step": 0.05, "style": "IPY_MODEL_5db8233912cf4ddfafd89098a4e6eb7d", "value": 1}}}, "version_major": 2, "version_minor": 0}
+</script></section>
+</section>
+</section>
+
+
+            <div class="clearer"></div>
+          </div>
+        </div>
+      </div>
+        </div>
+        <div class="sidebar">
+          
+          <h3>Table of Contents</h3>
+          <ul class="current">
+<li class="toctree-l1"><a class="reference internal" href="../index.html">Course Information</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../Administration/admin.html">Course Manual</a></li>
+<li class="toctree-l1 current"><a class="reference internal" href="../Tasks/contents_tasks.html">Weekly Tasks</a></li>
+<li class="toctree-l1"><a class="reference internal" href="contents_notebooks.html">Notebooks in the Tasks</a></li>
+<!--<li class="toctree-l1"><a class="reference internal" href="News/news.html">News, Hints and Tips</a></li>-->
+<li class="toctree-l1"><a class="reference internal" href="contents_stdnotebooks.html">Student Notebooks</a></li>
+<li class="toctree-l1"><a class="reference internal" href="contents_miscellaneous.html">Miscellaneous Notebooks</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../Howto/content.html">Remote Working Setup</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../Archive/Tutorials/contents_tutorials.html">Supplementary Materials</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../Archive/QuestionsAndAnswers/contents_QandA.html">Q&As Collection</a></li>
+<!--<li class="toctree-l1"><a class="reference internal" href="Archive/archive.html">Archive</a></li>
+<li class="toctree-l1"><a class="reference external" href="https://www.astro.rug.nl/intranet/prognumadmin/latest/grades.py">Personal Grading Record</a></li>-->
+</ul>
+
+          <div role="search">
+            <h3 style="margin-top: 1.5em;">Search</h3>
+            <form class="search" action="../search.html" method="get">
+                <input type="text" name="q" />
+                <input type="submit" value="Go" />
+            </form>
+          </div>
+
+        </div>
+        <div class="clearer"></div>
+      </div>
+    </div>
+
+    <div class="footer-wrapper">
+      <div class="footer">
+        <div class="left">
+          <!--<div role="navigation" aria-label="related navigaton">
+            <a href="LinearAlgebra.html" title="31. Notebook: Linear Algebra"
+              >previous</a> |
+            <a href="fourierTransforms.html" title="33. Notebook: Fourier Transforms"
+              >next</a> |
+            <a href="../py-modindex.html" title="Python Module Index"
+              >modules</a> |
+            <a href="../genindex.html" title="General Index"
+              >index</a>
+          </div>-->
+          <div role="note" aria-label="source link">
+          </div>
+        </div>
+
+        <div class="right">
+          
+    <div class="footer" role="contentinfo">
+    &#169; Copyright 2026 Kapteyn Institute.
+      Created using <a href="https://www.sphinx-doc.org/">Sphinx</a> 7.2.6.
+    </div>
+        </div>
+        <div class="clearer"></div>
+      </div>
+    </div>
+
+  </body>
+</html>
